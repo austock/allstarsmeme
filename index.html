@@ -167,20 +167,30 @@
     scrollbar-color: var(--border) transparent;
   }
   .sticker-item {
-    aspect-ratio: 1;
-    border-radius: 8px;
-    border: 2px solid transparent;
-    background: var(--surface2);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    transition: all 0.15s;
-    padding: 4px;
-  }
-  .sticker-item:hover { border-color: var(--accent); background: var(--surface3); transform: scale(1.06); }
-  .sticker-item img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+  aspect-ratio: 1 / 1;    /* 정사각형 유지 */
+  cursor: pointer;
+  border-radius: 8px;
+  background: var(--surface3);
+  display: flex;
+  align-items: center;    /* 수직 가운데 정렬 */
+  justify-content: center; /* 수평 가운데 정렬 */
+  overflow: hidden;       /* 영역 밖으로 나가는 부분 절단 */
+  transition: all 0.2s ease;
+  position: relative;     /* 레이아웃 기준점 설정 */
+  border: 1px solid transparent;
+}
+  .sticker-item:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  z-index: 10;            /* 마우스 올렸을 때 위로 올라오게 설정 */
+}
+ .sticker-item img {
+  max-width: 90%;         /* 여백을 위해 약간 줄임 */
+  max-height: 90%;
+  object-fit: contain;    /* 비율 유지하며 영역 안에 맞춤 */
+  display: block;         /* 하단 공백 제거 */
+}
 
   /* ── OBJECT CONTROLS ── */
   #obj-controls { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
