@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>올짤에디터</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gmarket+Sans:wght@300;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gmarket+Sans:wght@300;500;700&family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 <style>
   :root {
@@ -687,7 +687,8 @@
         </div>
       </div>
       <div id="obj-empty" style="padding:12px 16px;font-size:12px;color:var(--text3);">
-        오브젝트를 클릭하면 조절할 수 있어요
+        오브젝트를 클릭하면 조절할 수 있어요<br>
+        <span style="font-size:11px;color:var(--text3);opacity:0.7;margin-top:6px;display:block;">💡 Shift+클릭으로 여러 개 동시 선택</span>
       </div>
     </div>
 
@@ -701,7 +702,7 @@
           <select class="ctrl-select" id="text-font">
             <option value="Noto Sans KR">노토산스</option>
             <option value="Gmarket Sans">지마켓산스</option>
-            <option value="serif">명조</option>
+            <option value="Nanum Myeongjo">나눔명조</option>
           </select>
         </div>
         <div class="ctrl-row">
@@ -860,6 +861,18 @@
   </div>
 </div>
 
+<!-- CUSTOM CONFIRM POPUP -->
+<div id="popup-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px 24px 20px;max-width:300px;width:100%;display:flex;flex-direction:column;gap:16px;box-shadow:0 24px 64px rgba(0,0,0,0.5);">
+    <div style="font-family:'Gmarket Sans',sans-serif;font-size:16px;font-weight:700;" id="popup-title">초기화할까요?</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.6;" id="popup-msg">캔버스의 모든 내용이 삭제돼요.</div>
+    <div style="display:flex;gap:8px;">
+      <button id="popup-cancel" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">취소</button>
+      <button id="popup-confirm" style="flex:1;padding:11px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">초기화</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="file-input" accept="image/*">
 <div id="toast"></div>
 
@@ -984,18 +997,43 @@ document.getElementById('btn-redo').addEventListener('click', redo);
 document.getElementById('mb-undo').addEventListener('click', undo);
 
 // ══════════════════════════════════════════════
+//  CUSTOM POPUP
+// ══════════════════════════════════════════════
+let _popupCallback = null;
+function showPopup(title, msg, confirmLabel, onConfirm) {
+  document.getElementById('popup-title').textContent = title;
+  document.getElementById('popup-msg').textContent = msg;
+  document.getElementById('popup-confirm').textContent = confirmLabel;
+  _popupCallback = onConfirm;
+  const ov = document.getElementById('popup-overlay');
+  ov.style.display = 'flex';
+}
+document.getElementById('popup-cancel').addEventListener('click', () => {
+  document.getElementById('popup-overlay').style.display = 'none';
+});
+document.getElementById('popup-confirm').addEventListener('click', () => {
+  document.getElementById('popup-overlay').style.display = 'none';
+  if (_popupCallback) _popupCallback();
+});
+document.getElementById('popup-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('popup-overlay'))
+    document.getElementById('popup-overlay').style.display = 'none';
+});
+
+// ══════════════════════════════════════════════
 //  CLEAR — 전체 초기화
 // ══════════════════════════════════════════════
 document.getElementById('btn-clear').addEventListener('click', () => {
-  if (!confirm('캔버스를 전체 초기화할까요?')) return;
-  canvas.clear();
-  canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
-  canvasW = 800; canvasH = 600;
-  applyDisplayScale();
-  document.getElementById('start-overlay').classList.remove('hidden');
-  document.getElementById('canvas-size-info').textContent = '—';
-  undoStack = []; redoStack = [];
-  showToast('초기화 완료');
+  showPopup('전체 초기화', '캔버스의 모든 내용이 삭제돼요. 계속할까요?', '초기화', () => {
+    canvas.clear();
+    canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
+    canvasW = 800; canvasH = 600;
+    applyDisplayScale();
+    document.getElementById('start-overlay').classList.remove('hidden');
+    document.getElementById('canvas-size-info').textContent = '—';
+    undoStack = []; redoStack = [];
+    showToast('초기화 완료');
+  });
 });
 
 // ══════════════════════════════════════════════
