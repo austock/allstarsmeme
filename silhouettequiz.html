@@ -243,17 +243,6 @@
     box-shadow: 0 0 0 1px var(--border), 0 8px 32px rgba(0,0,0,0.4);
     flex-shrink: 0;
   }
-  /* 단독 모드 (정답 공개 전) */
-  .img-frame.solo {
-    width: min(180px, 42vw);
-    height: min(180px, 42vw);
-  }
-  /* 나란히 모드 (정답 공개 후) */
-  .img-frame.duo {
-    width: min(150px, 44vw);
-    height: min(150px, 44vw);
-  }
-
   .img-frame canvas {
     display: block;
     width: 100%;
@@ -270,9 +259,33 @@
     letter-spacing: 0.5px;
   }
 
-  /* 페이드 전환 */
-  #color-frame-wrap { display: none; flex-direction: column; align-items: center; }
-  #color-frame-wrap.show { display: flex; animation: fadeIn 0.4s ease; }
+  /* 크로스페이드: 두 canvas를 겹쳐서 실루엣 → 원본 */
+  #image-stack {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--surface2);
+    box-shadow: 0 0 0 1px var(--border), 0 8px 32px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+    width: min(200px, 52vw);
+    height: min(200px, 52vw);
+  }
+  #image-stack canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    user-select: none;
+    transition: opacity 0.6s ease;
+  }
+  #silhouette-canvas { opacity: 1; z-index: 2; }
+  #color-canvas      { opacity: 0; z-index: 1; }
+  #image-stack.revealed #silhouette-canvas { opacity: 0; }
+  #image-stack.revealed #color-canvas      { opacity: 1; }
+
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
   /* 정답 표시 구역 */
@@ -599,19 +612,10 @@
     <!-- 이미지 영역 -->
     <div id="image-area">
       <div id="image-row">
-        <!-- 실루엣 -->
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <div class="img-frame solo" id="silhouette-frame">
-            <canvas id="silhouette-canvas" width="400" height="400"></canvas>
-          </div>
-          <div class="img-label" id="sil-label">실루엣</div>
-        </div>
-        <!-- 컬러 (정답 공개 후) -->
-        <div id="color-frame-wrap">
-          <div class="img-frame duo" id="color-frame">
-            <canvas id="color-canvas" width="400" height="400"></canvas>
-          </div>
-          <div class="img-label">원본</div>
+        <!-- 크로스페이드 스택: 실루엣(위) + 원본(아래) -->
+        <div id="image-stack">
+          <canvas id="color-canvas"      width="400" height="400"></canvas>
+          <canvas id="silhouette-canvas" width="400" height="400"></canvas>
         </div>
       </div>
 
@@ -857,8 +861,13 @@ function startGame() {
 function getChar(idx) {
   if (isInfinite) {
     if (idx >= quizPool.length) {
-      // 소진 시 새 셔플로 연장
-      quizPool = [...quizPool, ...shuffle(allCharsInGame)];
+      // 소진 시 새 사이클 추가 — 경계 중복 방지
+      let next = shuffle(allCharsInGame);
+      // 직전 마지막 문제와 다음 사이클 첫 문제가 같으면 맨 뒤로 밀기
+      if (quizPool.length > 0 && next[0].path === quizPool[quizPool.length - 1].path) {
+        next.push(next.shift());
+      }
+      quizPool = [...quizPool, ...next];
     }
     return quizPool[idx];
   }
@@ -869,12 +878,12 @@ function loadQuestion() {
   answered = false;
   document.getElementById('next-btn-wrap').style.display = 'none';
 
-  // 이미지 영역 리셋
-  const silFrame = document.getElementById('silhouette-frame');
-  const colorWrap = document.getElementById('color-frame-wrap');
-  silFrame.className = 'img-frame solo';
-  colorWrap.classList.remove('show');
-  document.getElementById('sil-label').style.display = 'none';
+  // 크로스페이드 리셋: 실루엣이 보이는 상태로
+  document.getElementById('image-stack').classList.remove('revealed');
+
+  // color-canvas 클리어 (이전 이미지 안 보이게)
+  const colorCtx = document.getElementById('color-canvas').getContext('2d');
+  colorCtx.clearRect(0, 0, 400, 400);
 
   // 정답 구역 리셋
   const ar = document.getElementById('answer-reveal');
@@ -987,15 +996,13 @@ function onChoiceClick(btn, chosenName, chosenPath) {
   document.getElementById('stat-correct').textContent = correctCount;
   document.getElementById('stat-wrong').textContent = wrongCount;
 
-  // 실루엣 → 원본 공개
-  const silFrame = document.getElementById('silhouette-frame');
-  const colorWrap = document.getElementById('color-frame-wrap');
-  silFrame.className = 'img-frame duo';
-  document.getElementById('sil-label').style.display = 'block';
-
+  // 컬러 이미지를 미리 color-canvas에 그린 뒤 crossfade
   const colorCanvas = document.getElementById('color-canvas');
   drawColor(currentChar.path, colorCanvas, () => {
-    colorWrap.classList.add('show');
+    // 약간의 딜레이 후 페이드 (정답 배지 애니메이션과 타이밍 맞춤)
+    setTimeout(() => {
+      document.getElementById('image-stack').classList.add('revealed');
+    }, 150);
   });
 
   // 다음 버튼
