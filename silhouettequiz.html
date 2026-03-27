@@ -723,31 +723,24 @@ function drawSilhouette(src, canvasEl, cb) {
     const W = canvasEl.width, H = canvasEl.height;
     ctx.clearRect(0, 0, W, H);
 
-    // 배경: 중간 밝기 회색 (실루엣과 확실히 구분)
-    ctx.fillStyle = '#2a2a38';
+    // 배경: 흰색 고정
+    ctx.fillStyle = '#f4f4f4';
     ctx.fillRect(0, 0, W, H);
 
-    // contain: 잘리지 않게 비율 유지하며 안에 꽉 차게
-    const sc = Math.min(W / img.width, H / img.height) * 0.88; // 88%로 여백
+    const sc = Math.min(W / img.width, H / img.height) * 0.88;
     const dw = img.width * sc, dh = img.height * sc;
     const dx = (W - dw) / 2, dy = (H - dh) / 2;
     ctx.drawImage(img, dx, dy, dw, dh);
 
-    // 픽셀을 밝은 흰색으로 → 어두운 배경과 확실히 대비
     const d = ctx.getImageData(0, 0, W, H);
     const px = d.data;
     for (let i = 0; i < px.length; i += 4) {
       if (px[i + 3] > 10) {
-        px[i]     = 230;   // R — 밝은 흰색
-        px[i + 1] = 230;   // G
-        px[i + 2] = 230;   // B
-        px[i + 3] = 255;   // 완전 불투명
+        // 불투명 픽셀 → 검정 실루엣
+        px[i] = 20; px[i+1] = 20; px[i+2] = 20; px[i+3] = 255;
       } else {
-        // 투명 픽셀 → 배경색으로
-        px[i]     = 42;
-        px[i + 1] = 42;
-        px[i + 2] = 56;
-        px[i + 3] = 255;
+        // 투명 픽셀 → 흰 배경
+        px[i] = 244; px[i+1] = 244; px[i+2] = 244; px[i+3] = 255;
       }
     }
     ctx.putImageData(d, 0, 0);
@@ -755,9 +748,9 @@ function drawSilhouette(src, canvasEl, cb) {
   };
   img.onerror = () => {
     const ctx = canvasEl.getContext('2d');
-    ctx.fillStyle = '#2a2a38';
+    ctx.fillStyle = '#f4f4f4';
     ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
-    ctx.fillStyle = '#aaaacc';
+    ctx.fillStyle = '#333';
     ctx.font = `bold ${canvasEl.width * 0.3}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -774,9 +767,8 @@ function drawColor(src, canvasEl, cb) {
     const ctx = canvasEl.getContext('2d');
     const W = canvasEl.width, H = canvasEl.height;
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#2a2a38';
+    ctx.fillStyle = '#f4f4f4';
     ctx.fillRect(0, 0, W, H);
-    // contain + 여백 (실루엣과 동일 비율)
     const sc = Math.min(W / img.width, H / img.height) * 0.88;
     const dw = img.width * sc, dh = img.height * sc;
     ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
