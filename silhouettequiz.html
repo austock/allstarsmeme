@@ -717,33 +717,39 @@ async function loadManifest() {
 // ══════════════════════════════════════════════
 function drawSilhouette(src, canvasEl, cb) {
   const img = new Image();
-  img.crossOrigin = 'anonymous';
+  // crossOrigin 제거 — getImageData 대신 합성 방식 사용
   img.onload = () => {
     const ctx = canvasEl.getContext('2d');
     const W = canvasEl.width, H = canvasEl.height;
     ctx.clearRect(0, 0, W, H);
 
-    // 배경: 흰색 고정
+    // 1. 흰 배경
     ctx.fillStyle = '#f4f4f4';
     ctx.fillRect(0, 0, W, H);
 
+    // 2. contain 스케일 계산
     const sc = Math.min(W / img.width, H / img.height) * 0.88;
     const dw = img.width * sc, dh = img.height * sc;
     const dx = (W - dw) / 2, dy = (H - dh) / 2;
-    ctx.drawImage(img, dx, dy, dw, dh);
 
-    const d = ctx.getImageData(0, 0, W, H);
-    const px = d.data;
-    for (let i = 0; i < px.length; i += 4) {
-      if (px[i + 3] > 10) {
-        // 불투명 픽셀 → 검정 실루엣
-        px[i] = 20; px[i+1] = 20; px[i+2] = 20; px[i+3] = 255;
-      } else {
-        // 투명 픽셀 → 흰 배경
-        px[i] = 244; px[i+1] = 244; px[i+2] = 244; px[i+3] = 255;
-      }
-    }
-    ctx.putImageData(d, 0, 0);
+    // 3. 이미지의 불투명 영역만 검정으로 칠하기
+    //    — destination-in: 이미지를 마스크로 써서 아래 색만 남김
+    ctx.save();
+    // 검정 사각형을 그린 뒤 이미지로 마스킹
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(dx, dy, dw, dh);
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.drawImage(img, dx, dy, dw, dh);
+    ctx.restore();
+
+    // 4. 배경을 다시 흰색으로 (투명 영역 채우기)
+    //    destination-over: 현재 내용 뒤에 배경 채움
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = '#f4f4f4';
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+
     if (cb) cb();
   };
   img.onerror = () => {
@@ -762,7 +768,7 @@ function drawSilhouette(src, canvasEl, cb) {
 
 function drawColor(src, canvasEl, cb) {
   const img = new Image();
-  img.crossOrigin = 'anonymous';
+  // crossOrigin 제거 (same-origin 이미지)
   img.onload = () => {
     const ctx = canvasEl.getContext('2d');
     const W = canvasEl.width, H = canvasEl.height;
