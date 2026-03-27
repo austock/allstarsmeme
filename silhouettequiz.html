@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>올실루엣 퀴즈</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gmarket+Sans:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --surface2: #22222e;
+    --surface3: #2a2a38;
+    --border: #32324a;
+    --accent: #ffd93d;       /* 노란색 테마 */
+    --accent-dim: rgba(255,217,61,0.12);
+    --text: #f0f0f8;
+    --text2: #9999bb;
+    --text3: #55556a;
+    --correct: #6bcb77;
+    --wrong: #ff5555;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    overflow-x: hidden;
+  }
+  body { display: flex; flex-direction: column; min-height: 100dvh; }
+
+  /* ── TOPBAR ── */
+  #topbar {
+    height: 52px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 10px;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Gmarket Sans', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+  }
+  .logo-sub { font-size: 10px; color: var(--text3); white-space: nowrap; }
+  .tb-spacer { flex: 1; }
+
+  #back-btn, #finish-btn {
+    display: none;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  #back-btn:hover { border-color: var(--accent); color: var(--text); }
+  #finish-btn { border-color: var(--accent); color: var(--accent); }
+  #finish-btn:hover { background: var(--accent-dim); }
+  #back-btn svg, #finish-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .screen.active { display: flex; }
+
+  /* ════════════════════════════
+     SETUP SCREEN
+  ════════════════════════════ */
+  #setup-screen {
+    overflow-y: auto;
+    align-items: center;
+    padding: 28px 20px 48px;
+  }
+  .setup-inner {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  .setup-hero { text-align: center; }
+  .setup-eyebrow {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-family: 'Gmarket Sans', sans-serif;
+    font-weight: 300;
+    margin-bottom: 8px;
+  }
+  .setup-title {
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: clamp(24px, 7vw, 38px);
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1.15;
+  }
+  .setup-title em { font-style: normal; color: var(--accent); }
+  .setup-desc { margin-top: 8px; font-size: 12px; color: var(--text3); }
+
+  .setup-block { display: flex; flex-direction: column; gap: 10px; }
+  .setup-block-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+
+  .cat-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cat-filter-btn {
+    padding: 7px 16px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 13px;
+    font-family: 'Gmarket Sans', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .cat-filter-btn:hover { border-color: var(--accent); color: var(--text); }
+  .cat-filter-btn.on { background: var(--accent); border-color: var(--accent); color: #111; font-weight: 700; }
+
+  .count-btns { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+  .count-btn {
+    padding: 12px 6px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .count-btn .count-sub { display: block; font-size: 10px; color: var(--text3); margin-top: 2px; font-weight: 300; }
+  .count-btn:hover { border-color: var(--accent); color: var(--text); }
+  .count-btn.on { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .count-btn.on .count-sub { color: var(--accent); opacity: 0.6; }
+
+  #start-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 14px;
+    border: none;
+    background: var(--accent);
+    color: #111;
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #start-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  #start-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .setup-warning { font-size: 12px; color: var(--wrong); text-align: center; min-height: 16px; }
+  .setup-info { font-size: 12px; color: var(--text3); text-align: center; min-height: 16px; }
+
+  /* ════════════════════════════
+     QUIZ SCREEN
+  ════════════════════════════ */
+  #quiz-screen { overflow: hidden; }
+
+  #progress-bar-wrap { height: 3px; background: var(--surface2); flex-shrink: 0; }
+  #progress-bar { height: 100%; background: var(--accent); transition: width 0.4s ease; width: 0%; }
+
+  #quiz-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .status-qnum {
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+  .status-chips { display: flex; gap: 14px; }
+  .stat-chip { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .stat-chip-val { font-family: 'Gmarket Sans', sans-serif; font-size: 17px; font-weight: 700; }
+  .stat-chip-val.c { color: var(--correct); }
+  .stat-chip-val.w { color: var(--wrong); }
+  .stat-chip-label { font-size: 9px; color: var(--text3); letter-spacing: 0.8px; }
+
+  /* 퀴즈 스크롤 바디 */
+  #quiz-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 이미지 영역 */
+  #image-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 0;
+    flex-shrink: 0;
+  }
+
+  /* 실루엣 + 컬러 두 이미지를 나란히 또는 하나만 */
+  #image-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: flex-end;
+    width: 100%;
+  }
+
+  .img-frame {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--surface2);
+    box-shadow: 0 0 0 1px var(--border), 0 8px 32px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+  }
+  /* 단독 모드 (정답 공개 전) */
+  .img-frame.solo {
+    width: min(180px, 42vw);
+    height: min(180px, 42vw);
+  }
+  /* 나란히 모드 (정답 공개 후) */
+  .img-frame.duo {
+    width: min(150px, 44vw);
+    height: min(150px, 44vw);
+  }
+
+  .img-frame canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+  .img-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-align: center;
+    margin-top: 5px;
+    letter-spacing: 0.5px;
+  }
+
+  /* 페이드 전환 */
+  #color-frame-wrap { display: none; flex-direction: column; align-items: center; }
+  #color-frame-wrap.show { display: flex; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* 정답 표시 구역 */
+  #answer-reveal {
+    margin-top: 14px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+    min-height: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    transition: all 0.3s;
+  }
+  #answer-reveal.correct-state { border-color: var(--correct); background: rgba(107,203,119,0.1); }
+  #answer-reveal.wrong-state { border-color: var(--wrong); background: rgba(255,85,85,0.08); }
+
+  #answer-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  #answer-badge.show { opacity: 1; }
+  #answer-badge.correct-badge { color: var(--correct); }
+  #answer-badge.wrong-badge { color: var(--wrong); }
+
+  #answer-name {
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text3);
+    opacity: 0;
+    transition: opacity 0.3s 0.1s;
+  }
+  #answer-name.show { opacity: 1; color: var(--text); }
+  #answer-name.correct-name { color: var(--correct); }
+  #answer-name.wrong-name { color: var(--wrong); }
+
+  #answer-hint { font-size: 11px; color: var(--text3); opacity: 0; transition: opacity 0.3s 0.15s; }
+  #answer-hint.show { opacity: 1; }
+
+  /* 선택지 영역 */
+  #choices-area {
+    padding: 16px 12px 24px;
+    flex: 1;
+  }
+
+  /* 카테고리 섹션 헤더 */
+  .cat-section { margin-bottom: 10px; }
+  .cat-section-header {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    text-transform: uppercase;
+    padding: 4px 4px 6px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cat-section-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  /* 선택지 버튼 */
+  .choice-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .choice-btn {
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 1.3;
+  }
+  .choice-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+  .choice-btn:disabled { cursor: default; }
+  .choice-btn.selected-correct { border-color: var(--correct); background: rgba(107,203,119,0.15); color: var(--correct); font-weight: 700; }
+  .choice-btn.selected-wrong { border-color: var(--wrong); background: rgba(255,85,85,0.12); color: var(--wrong); }
+  .choice-btn.show-correct { border-color: var(--correct); background: rgba(107,203,119,0.08); color: var(--correct); }
+
+  /* 다음 문제 버튼 */
+  #next-btn-wrap { padding: 0 12px 16px; flex-shrink: 0; display: none; }
+  #next-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    border: 1px solid var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  #next-btn:hover { background: var(--accent); color: #111; }
+
+  /* ════════════════════════════
+     RESULT SCREEN
+  ════════════════════════════ */
+  #result-screen {
+    overflow-y: auto;
+    align-items: center;
+    padding: 28px 16px 48px;
+  }
+  .result-inner { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 24px; }
+
+  .result-hero { text-align: center; }
+  .result-emoji { font-size: 52px; line-height: 1; margin-bottom: 10px; }
+  .result-title { font-family: 'Gmarket Sans', sans-serif; font-size: clamp(20px,5vw,30px); font-weight: 700; letter-spacing: -0.5px; }
+  .result-subtitle { font-size: 13px; color: var(--text3); margin-top: 5px; }
+
+  .result-score-wrap { display: flex; gap: 10px; justify-content: center; }
+  .score-card {
+    flex: 1; max-width: 120px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .score-card-val { font-family: 'Gmarket Sans', sans-serif; font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .score-card-val.c { color: var(--correct); }
+  .score-card-val.w { color: var(--wrong); }
+  .score-card-val.p { color: var(--accent); }
+  .score-card-label { font-size: 10px; color: var(--text3); letter-spacing: 1px; }
+
+  /* 전체 문제 결과 목록 */
+  .result-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .result-list { display: flex; flex-direction: column; gap: 8px; }
+  .result-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .result-item.correct-item { border-color: rgba(107,203,119,0.3); }
+  .result-item.wrong-item { border-color: rgba(255,85,85,0.3); }
+
+  .result-item-num { font-size: 11px; color: var(--text3); width: 18px; flex-shrink: 0; text-align: center; }
+
+  .result-item-imgs { display: flex; gap: 6px; flex-shrink: 0; }
+  .result-mini-frame {
+    width: 40px; height: 40px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--surface2);
+    flex-shrink: 0;
+  }
+  .result-mini-frame canvas { width: 40px; height: 40px; display: block; pointer-events: none; -webkit-user-drag: none; }
+
+  .result-item-info { flex: 1; min-width: 0; }
+  .result-item-answer { font-size: 14px; font-weight: 700; line-height: 1.3; word-break: keep-all; }
+  .result-item-answer.correct-answer { color: var(--correct); }
+  .result-item-answer.wrong-answer { color: var(--wrong); }
+  .result-item-chosen { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .result-btns { display: flex; flex-direction: column; gap: 8px; }
+  .result-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .result-btn:hover { background: var(--surface3); border-color: var(--accent); }
+  .result-btn.primary { background: var(--accent); border-color: var(--accent); color: #111; }
+  .result-btn.primary:hover { filter: brightness(1.08); }
+  .result-btn.share { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .result-btn.share:hover { background: var(--accent); color: #111; }
+
+  /* ════════════════════════════
+     CUSTOM POPUP (confirm)
+  ════════════════════════════ */
+  #popup-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+  #popup-overlay.show { display: flex; }
+  .popup-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px 24px 20px;
+    max-width: 320px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  }
+  .popup-title { font-family: 'Gmarket Sans', sans-serif; font-size: 17px; font-weight: 700; }
+  .popup-msg { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .popup-btns { display: flex; gap: 8px; }
+  .popup-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .popup-btn:hover { background: var(--surface3); }
+  .popup-btn.confirm { background: var(--accent); border-color: var(--accent); color: #111; }
+  .popup-btn.confirm:hover { filter: brightness(1.08); }
+
+  /* 우클릭 방지 */
+  canvas { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div>
+    <div class="logo">✦ 올실루엣 퀴즈</div>
+    <div class="logo-sub">실루엣만 보고 캐릭터 맞추기</div>
+  </div>
+  <div class="tb-spacer"></div>
+  <button id="finish-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    게임 완료하기
+  </button>
+  <button id="back-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    처음으로
+  </button>
+</div>
+
+<!-- ══════════ SETUP ══════════ -->
+<div class="screen active" id="setup-screen">
+  <div class="setup-inner">
+    <div class="setup-hero">
+      <div class="setup-eyebrow">silhouette quiz</div>
+      <h1 class="setup-title">올<em>실루엣</em><br>퀴즈</h1>
+      <p class="setup-desc">실루엣만 보고 캐릭터를 맞춰보세요</p>
+    </div>
+
+    <div class="setup-block">
+      <div class="setup-block-label">카테고리 선택 (복수 가능)</div>
+      <div class="cat-filters" id="cat-filters"></div>
+    </div>
+
+    <div class="setup-block">
+      <div class="setup-block-label">문제 수</div>
+      <div class="count-btns">
+        <button class="count-btn on" data-count="10">10<span class="count-sub">문제</span></button>
+        <button class="count-btn" data-count="30">30<span class="count-sub">문제</span></button>
+        <button class="count-btn" data-count="50">50<span class="count-sub">문제</span></button>
+        <button class="count-btn" data-count="0">∞<span class="count-sub">무한</span></button>
+      </div>
+    </div>
+
+    <div class="setup-info" id="setup-info"></div>
+    <div class="setup-warning" id="setup-warning"></div>
+    <button id="start-btn" disabled>게임 시작</button>
+  </div>
+</div>
+
+<!-- ══════════ QUIZ ══════════ -->
+<div class="screen" id="quiz-screen">
+  <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+  <div id="quiz-status">
+    <div class="status-qnum" id="status-qnum">문제 1</div>
+    <div class="status-chips">
+      <div class="stat-chip">
+        <div class="stat-chip-val c" id="stat-correct">0</div>
+        <div class="stat-chip-label">정답</div>
+      </div>
+      <div class="stat-chip">
+        <div class="stat-chip-val w" id="stat-wrong">0</div>
+        <div class="stat-chip-label">오답</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="quiz-scroll">
+    <!-- 이미지 영역 -->
+    <div id="image-area">
+      <div id="image-row">
+        <!-- 실루엣 -->
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <div class="img-frame solo" id="silhouette-frame">
+            <canvas id="silhouette-canvas" width="400" height="400"></canvas>
+          </div>
+          <div class="img-label" id="sil-label">실루엣</div>
+        </div>
+        <!-- 컬러 (정답 공개 후) -->
+        <div id="color-frame-wrap">
+          <div class="img-frame duo" id="color-frame">
+            <canvas id="color-canvas" width="400" height="400"></canvas>
+          </div>
+          <div class="img-label">원본</div>
+        </div>
+      </div>
+
+      <!-- 정답 표시 구역 -->
+      <div id="answer-reveal">
+        <div id="answer-badge"></div>
+        <div id="answer-name">?</div>
+        <div id="answer-hint"></div>
+      </div>
+    </div>
+
+    <!-- 선택지 (카테고리 섹션별 스크롤) -->
+    <div id="choices-area"></div>
+  </div>
+
+  <div id="next-btn-wrap">
+    <button id="next-btn">다음 문제 →</button>
+  </div>
+</div>
+
+<!-- ══════════ RESULT ══════════ -->
+<div class="screen" id="result-screen">
+  <div class="result-inner">
+    <div class="result-hero">
+      <div class="result-emoji" id="result-emoji">🎉</div>
+      <div class="result-title" id="result-title">퀴즈 완료!</div>
+      <div class="result-subtitle" id="result-subtitle"></div>
+    </div>
+
+    <div class="result-score-wrap">
+      <div class="score-card"><div class="score-card-val c" id="res-correct">0</div><div class="score-card-label">정답</div></div>
+      <div class="score-card"><div class="score-card-val w" id="res-wrong">0</div><div class="score-card-label">오답</div></div>
+      <div class="score-card"><div class="score-card-val p" id="res-pct">0%</div><div class="score-card-label">정답률</div></div>
+    </div>
+
+    <div id="result-log-section">
+      <div class="result-section-title">문제 결과</div>
+      <div class="result-list" id="result-list"></div>
+    </div>
+
+    <div class="result-btns">
+      <button class="result-btn share" id="share-btn">📋 결과 공유하기</button>
+      <button class="result-btn primary" id="retry-btn">다시 도전</button>
+      <button class="result-btn" id="setup-again-btn">설정 변경</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM POPUP -->
+<div id="popup-overlay">
+  <div class="popup-box">
+    <div class="popup-title" id="popup-title">처음으로 돌아갈까요?</div>
+    <div class="popup-msg" id="popup-msg">지금까지의 진행상황이 사라져요.</div>
+    <div class="popup-btns">
+      <button class="popup-btn" id="popup-cancel">취소</button>
+      <button class="popup-btn confirm" id="popup-confirm">확인</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  우클릭 차단
+// ══════════════════════════════════════════════
+document.addEventListener('contextmenu', e => { if (e.target.tagName === 'CANVAS') e.preventDefault(); });
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let MANIFEST = { categories: [] };
+let selectedCats = new Set();
+let quizCount = 10;
+let quizPool = [];
+let currentIdx = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let quizLog = [];   // { char, chosen, isCorrect }
+let answered = false;
+let currentChar = null;
+let allCharsInGame = [];
+let isInfinite = false;
+
+// ══════════════════════════════════════════════
+//  MANIFEST
+// ══════════════════════════════════════════════
+async function loadManifest() {
+  try {
+    const res = await fetch('./img/manifest.json');
+    if (!res.ok) throw new Error();
+    MANIFEST = await res.json();
+  } catch {
+    MANIFEST = {"categories":[{"id":"ia","label":"IA","stickers":["img/IA/H.png","img/IA/개더링 이모션.png","img/IA/게이트 키퍼.png","img/IA/굿독.png","img/IA/닉스 T 델 캄포.png","img/IA/다니엘 드와이트.png","img/IA/더 골든 아이.png","img/IA/더 타임.png","img/IA/디 앵커 카론 노라크.png","img/IA/디보티.png","img/IA/디어.png","img/IA/라비린스.png","img/IA/라연 샌더스 최.png","img/IA/란 류양.png","img/IA/레지나 로빈슨.png","img/IA/렉싱턴 경현 서.png","img/IA/매치북.png","img/IA/밀리던트.png","img/IA/바네사 록우드.png","img/IA/블랙 바니.png","img/IA/새뮤얼 하터스.png","img/IA/스펙터.png","img/IA/아만다 엔젤 해리슨.png","img/IA/알렉스 머피.png","img/IA/앤디 맥클레인.png","img/IA/에덴 잭.png","img/IA/엘렌 엔젤 월시.png","img/IA/오로라.png","img/IA/오필리아.png","img/IA/이오리 타카나시 와이즈.png","img/IA/제니아.png","img/IA/지오반니 키안.png","img/IA/찰리 C 비아트릭스.png","img/IA/카피캣.png","img/IA/케토스.png","img/IA/코트 제스터.png","img/IA/콜드-블러디드.png","img/IA/탐신 포스터.png","img/IA/트릭시.png","img/IA/펠리페 퍼스.png","img/IA/헤이든 아이작.png"]},{"id":"ha","label":"HA","stickers":["img/HA/닉스 델 캄포.png","img/HA/닥터 게놈.png","img/HA/렉싱턴 렉스 경현 서.png","img/HA/마이카 랜슬롯.png","img/HA/서머 칼더스베리.png","img/HA/소피아 아이작.png","img/HA/알렉산더 마틴.png","img/HA/앤디 맥클레인.png","img/HA/에런 디콧.png","img/HA/에이허브 밀러.png","img/HA/엘렌 엔젤 월시.png","img/HA/재스퍼 하이드.png","img/HA/찰리 V. 카트먼.png","img/HA/최서방.png","img/HA/케이틀린 그레이.png","img/HA/타카나시 이오리.png"]},{"id":"cl","label":"CL","stickers":["img/CL/가브리엘라 굿맨.png","img/CL/레기온.png","img/CL/레니 나흐트.png","img/CL/레이먼드 로저스.png","img/CL/레퀴엠 플라워.png","img/CL/로미오.png","img/CL/로씨아이 엔델리.png","img/CL/마야 린네.png","img/CL/마일로 황 차베즈.png","img/CL/마테오 가르시아.png","img/CL/맥스웰.png","img/CL/밀리 나흐트.png","img/CL/발레리 리-애덤스.png","img/CL/봄버가이.png","img/CL/블랙 트레일.png","img/CL/블러드써커.png","img/CL/블레이드.png","img/CL/비센테 알바로.png","img/CL/사야 데이.png","img/CL/세르켓.png","img/CL/세이지 이노우에.png","img/CL/셀러맨더.png","img/CL/셰퍼드.png","img/CL/아웃캐스트.png","img/CL/알리에노 데르.png","img/CL/야마구치 사요코.png","img/CL/에이브리 바너드.png","img/CL/에즈라 마틴.png","img/CL/여행자.png","img/CL/요나 가르시아.png","img/CL/조이 살라자르.png","img/CL/케일라 카브레라.png","img/CL/켄 타오.png","img/CL/킬러 웨일.png","img/CL/트라베.png","img/CL/트윙클 나이트.png","img/CL/티토.png","img/CL/파리스.png","img/CL/페어웰.png","img/CL/프로스페로.png","img/CL/흰 기모노의 혈귀.png"]},{"id":"pc","label":"PC","stickers":["img/PC/그레이웨일.png","img/PC/라스 워커.png","img/PC/레이먼드 로버트 로저스.png","img/PC/루카스 맥밀런.png","img/PC/마이카 랜슬롯.png","img/PC/마일로 황 차베즈.png","img/PC/미저리.png","img/PC/살로메 도노반.png","img/PC/쇼쿠센 이노우에.png","img/PC/알리에노 베르데.png","img/PC/에릭 영.png","img/PC/에이브리 바너드.png","img/PC/에즈라.png","img/PC/파블로 카브레라.png","img/PC/헤론.png"]},{"id":"or","label":"OR","stickers":["img/OR/Mr. 팬픽.png","img/OR/그레그쿠로스.png","img/OR/더 배터.png","img/OR/라자로.png","img/OR/스노우화이트.png","img/OR/아네모이.png","img/OR/아무거나.png","img/OR/앰버록스.png","img/OR/엔시.png","img/OR/주데카.png","img/OR/진 오르테가.png","img/OR/코코넛.png","img/OR/타이터스.png","img/OR/트릭스터.png","img/OR/페어러.png","img/OR/포세이돈.png"]},{"id":"lo","label":"LO","stickers":["img/LO/13.png","img/LO/그레고리 펙 켄달.png","img/LO/나타니엘 리치.png","img/LO/낸시.png","img/LO/네르.png","img/LO/라이오네스.png","img/LO/에린 크로우.png","img/LO/에이든 코헨베르티.png","img/LO/엘라라 유에.png","img/LO/장 노시스.png","img/LO/재커라이어 잭 킹.png","img/LO/캐스터 에이스 모겐스턴.png","img/LO/크바시라엘 쿤스 에시르 리네아 룬드크비스트.png","img/LO/파스카.png"]},{"id":"wm","label":"WM","stickers":["img/WM/CC.png","img/WM/글래디스.png","img/WM/넌.png","img/WM/네이즈 포핀스.png","img/WM/노네임.png","img/WM/뉴먼.png","img/WM/니나 타카하시.png","img/WM/더 월드.png","img/WM/더 포켓 피커.png","img/WM/더피.png","img/WM/로디온 바그라모프.png","img/WM/로보.png","img/WM/마르티나 로드리게즈.png","img/WM/마타도어.png","img/WM/매버릭 로웰.png","img/WM/모노톤.png","img/WM/미그달.png","img/WM/미하엘 스트릭랜드.png","img/WM/미하일 데븐포트.png","img/WM/베스퍼.png","img/WM/베일리 포레스트.png","img/WM/볼프강 디트리히.png","img/WM/브라이어 프린지.png","img/WM/블록-맨.png","img/WM/빌헬름 C. 오브라이언.png","img/WM/빙기.png","img/WM/산어른.png","img/WM/서머솔트.png","img/WM/스니치.png","img/WM/시오나.png","img/WM/시티-가이드.png","img/WM/신디 캠벨.png","img/WM/아라크네.png","img/WM/아이사.png","img/WM/아프로스.png","img/WM/안토니오 브루니 주니어.png","img/WM/애디.png","img/WM/에나스세븐.png","img/WM/에두아르 블록.png","img/WM/에드거 밀러.png","img/WM/엘로힘 아모스.png","img/WM/연쇄 살인마 카를.png","img/WM/오웰 부커맨.png","img/WM/이드리츠.png","img/WM/주마니.png","img/WM/지미 포스너.png","img/WM/카르멘.png","img/WM/카를로스 호세 바에즈.png","img/WM/캐롤라인 브라운.png","img/WM/케이커스.png","img/WM/포에.png"]}]};
+  }
+  buildSetupUI();
+}
+
+// ══════════════════════════════════════════════
+//  CANVAS DRAW
+// ══════════════════════════════════════════════
+function drawSilhouette(src, canvasEl, cb) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const ctx = canvasEl.getContext('2d');
+    const W = canvasEl.width, H = canvasEl.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#1a1a22';
+    ctx.fillRect(0, 0, W, H);
+    const sc = Math.max(W / img.width, H / img.height);
+    ctx.drawImage(img, (W - img.width * sc) / 2, (H - img.height * sc) / 2, img.width * sc, img.height * sc);
+    const d = ctx.getImageData(0, 0, W, H);
+    const px = d.data;
+    for (let i = 0; i < px.length; i += 4) {
+      if (px[i + 3] > 10) { px[i] = 15; px[i+1] = 15; px[i+2] = 15; }
+    }
+    ctx.putImageData(d, 0, 0);
+    if (cb) cb();
+  };
+  img.onerror = () => {
+    const ctx = canvasEl.getContext('2d');
+    ctx.fillStyle = '#22222e';
+    ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+    ctx.fillStyle = '#55556a';
+    ctx.font = `bold ${canvasEl.width * 0.3}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('?', canvasEl.width / 2, canvasEl.height / 2);
+    if (cb) cb();
+  };
+  img.src = src;
+}
+
+function drawColor(src, canvasEl, cb) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const ctx = canvasEl.getContext('2d');
+    const W = canvasEl.width, H = canvasEl.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#1a1a22';
+    ctx.fillRect(0, 0, W, H);
+    const sc = Math.max(W / img.width, H / img.height);
+    ctx.drawImage(img, (W - img.width * sc) / 2, (H - img.height * sc) / 2, img.width * sc, img.height * sc);
+    if (cb) cb();
+  };
+  img.onerror = () => { if (cb) cb(); };
+  img.src = src;
+}
+
+// ══════════════════════════════════════════════
+//  SETUP UI
+// ══════════════════════════════════════════════
+function buildSetupUI() {
+  const el = document.getElementById('cat-filters');
+  el.innerHTML = '';
+  MANIFEST.categories.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-filter-btn';
+    btn.textContent = cat.label;
+    btn.dataset.id = cat.id;
+    btn.addEventListener('click', () => {
+      selectedCats.has(cat.id) ? selectedCats.delete(cat.id) : selectedCats.add(cat.id);
+      btn.classList.toggle('on', selectedCats.has(cat.id));
+      validateSetup();
+    });
+    el.appendChild(btn);
+  });
+}
+
+function validateSetup() {
+  const total = MANIFEST.categories
+    .filter(c => selectedCats.has(c.id))
+    .reduce((s, c) => s + c.stickers.length, 0);
+  const warn = document.getElementById('setup-warning');
+  const info = document.getElementById('setup-info');
+  const btn = document.getElementById('start-btn');
+  if (selectedCats.size === 0) {
+    warn.textContent = '카테고리를 1개 이상 선택해주세요';
+    info.textContent = '';
+    btn.disabled = true;
+  } else if (total < 2) {
+    warn.textContent = '캐릭터가 너무 적어요 (최소 2명)';
+    info.textContent = '';
+    btn.disabled = true;
+  } else {
+    warn.textContent = '';
+    info.textContent = `총 ${total}명 중 출제`;
+    btn.disabled = false;
+  }
+}
+
+document.querySelectorAll('.count-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    quizCount = parseInt(btn.dataset.count);
+  });
+});
+
+document.getElementById('start-btn').addEventListener('click', startGame);
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+function pathToName(p) { return p.split('/').pop().replace(/\.png$/i, ''); }
+function shuffle(a) {
+  const b = [...a];
+  for (let i = b.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [b[i], b[j]] = [b[j], b[i]];
+  }
+  return b;
+}
+
+// ══════════════════════════════════════════════
+//  GAME START
+// ══════════════════════════════════════════════
+function startGame() {
+  allCharsInGame = [];
+  MANIFEST.categories.forEach(cat => {
+    if (!selectedCats.has(cat.id)) return;
+    cat.stickers.forEach(path => {
+      allCharsInGame.push({ path, name: pathToName(path), catId: cat.id, catLabel: cat.label });
+    });
+  });
+
+  isInfinite = quizCount === 0;
+  const shuffled = shuffle(allCharsInGame);
+  quizPool = isInfinite ? shuffled : shuffled.slice(0, Math.min(quizCount, shuffled.length));
+
+  currentIdx = 0; correctCount = 0; wrongCount = 0; quizLog = []; answered = false;
+
+  showScreen('quiz-screen');
+  document.getElementById('back-btn').style.display = 'flex';
+  document.getElementById('finish-btn').style.display = isInfinite ? 'flex' : 'none';
+
+  loadQuestion();
+}
+
+// ══════════════════════════════════════════════
+//  LOAD QUESTION
+// ══════════════════════════════════════════════
+function getChar(idx) {
+  if (isInfinite) {
+    if (idx >= quizPool.length) {
+      // 소진 시 새 셔플로 연장
+      quizPool = [...quizPool, ...shuffle(allCharsInGame)];
+    }
+    return quizPool[idx];
+  }
+  return quizPool[idx];
+}
+
+function loadQuestion() {
+  answered = false;
+  document.getElementById('next-btn-wrap').style.display = 'none';
+
+  // 이미지 영역 리셋
+  const silFrame = document.getElementById('silhouette-frame');
+  const colorWrap = document.getElementById('color-frame-wrap');
+  silFrame.className = 'img-frame solo';
+  colorWrap.classList.remove('show');
+  document.getElementById('sil-label').style.display = 'none';
+
+  // 정답 구역 리셋
+  const ar = document.getElementById('answer-reveal');
+  ar.className = '';
+  document.getElementById('answer-badge').className = '';
+  document.getElementById('answer-badge').textContent = '';
+  document.getElementById('answer-name').className = '';
+  document.getElementById('answer-name').textContent = '?';
+  document.getElementById('answer-hint').className = '';
+  document.getElementById('answer-hint').textContent = '';
+
+  // 현재 문제
+  currentChar = getChar(currentIdx);
+
+  // 상태 바
+  const total = isInfinite ? '∞' : quizPool.length;
+  document.getElementById('status-qnum').textContent = `문제 ${currentIdx + 1} / ${total}`;
+  document.getElementById('stat-correct').textContent = correctCount;
+  document.getElementById('stat-wrong').textContent = wrongCount;
+  if (!isInfinite) {
+    document.getElementById('progress-bar').style.width = `${(currentIdx / quizPool.length) * 100}%`;
+  }
+
+  // 실루엣
+  drawSilhouette(currentChar.path, document.getElementById('silhouette-canvas'));
+
+  // 선택지 렌더
+  buildChoices();
+}
+
+// ══════════════════════════════════════════════
+//  BUILD CHOICES — 카테고리 섹션별 스크롤
+// ══════════════════════════════════════════════
+function buildChoices() {
+  const area = document.getElementById('choices-area');
+  area.innerHTML = '';
+
+  const cats = MANIFEST.categories.filter(c => selectedCats.has(c.id));
+  cats.forEach(cat => {
+    const section = document.createElement('div');
+    section.className = 'cat-section';
+
+    const header = document.createElement('div');
+    header.className = 'cat-section-header';
+    header.textContent = cat.label;
+    section.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'choice-grid';
+
+    cat.stickers.forEach(path => {
+      const name = pathToName(path);
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = name;
+      btn.dataset.name = name;
+      btn.dataset.path = path;
+      btn.dataset.catId = cat.id;
+      btn.addEventListener('click', () => onChoiceClick(btn, name, path));
+      grid.appendChild(btn);
+    });
+
+    section.appendChild(grid);
+    area.appendChild(section);
+  });
+}
+
+// ══════════════════════════════════════════════
+//  CHOICE CLICK
+// ══════════════════════════════════════════════
+function onChoiceClick(btn, chosenName, chosenPath) {
+  if (answered) return;
+  answered = true;
+
+  // 모든 버튼 비활성화
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.name === currentChar.name) b.classList.add('show-correct');
+  });
+
+  const isCorrect = chosenName === currentChar.name;
+  isCorrect ? correctCount++ : wrongCount++;
+  quizLog.push({ char: currentChar, chosen: chosenName, isCorrect });
+
+  // 정답 구역 업데이트
+  const ar = document.getElementById('answer-reveal');
+  const badge = document.getElementById('answer-badge');
+  const nameEl = document.getElementById('answer-name');
+  const hint = document.getElementById('answer-hint');
+
+  if (isCorrect) {
+    ar.className = 'correct-state';
+    btn.classList.add('selected-correct');
+    badge.className = 'show correct-badge';
+    badge.textContent = '정답!';
+    nameEl.className = 'show correct-name';
+    hint.textContent = '';
+  } else {
+    ar.className = 'wrong-state';
+    btn.classList.add('selected-wrong');
+    badge.className = 'show wrong-badge';
+    badge.textContent = '오답';
+    nameEl.className = 'show wrong-name';
+    hint.className = 'show';
+    hint.textContent = `내 선택: ${chosenName}`;
+  }
+  nameEl.textContent = currentChar.name;
+  hint.className = isCorrect ? '' : 'show';
+
+  document.getElementById('stat-correct').textContent = correctCount;
+  document.getElementById('stat-wrong').textContent = wrongCount;
+
+  // 실루엣 → 원본 공개
+  const silFrame = document.getElementById('silhouette-frame');
+  const colorWrap = document.getElementById('color-frame-wrap');
+  silFrame.className = 'img-frame duo';
+  document.getElementById('sil-label').style.display = 'block';
+
+  const colorCanvas = document.getElementById('color-canvas');
+  drawColor(currentChar.path, colorCanvas, () => {
+    colorWrap.classList.add('show');
+  });
+
+  // 다음 버튼
+  const isLast = !isInfinite && currentIdx >= quizPool.length - 1;
+  document.getElementById('next-btn').textContent = isLast ? '결과 보기 →' : '다음 문제 →';
+  document.getElementById('next-btn-wrap').style.display = 'block';
+
+  // 정답 위치로 스크롤
+  setTimeout(() => {
+    document.querySelector(`[data-name="${currentChar.name}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 300);
+}
+
+document.getElementById('next-btn').addEventListener('click', () => {
+  const isLast = !isInfinite && currentIdx >= quizPool.length - 1;
+  if (isLast) showResult();
+  else { currentIdx++; loadQuestion(); }
+});
+
+// 무한모드 완료 버튼
+document.getElementById('finish-btn').addEventListener('click', () => {
+  if (quizLog.length === 0) {
+    showPopup('아직 문제를 풀지 않았어요', '최소 1문제를 풀어야 결과를 볼 수 있어요', null);
+    return;
+  }
+  showResult();
+});
+
+// ══════════════════════════════════════════════
+//  RESULT
+// ══════════════════════════════════════════════
+function showResult() {
+  const total = quizLog.length;
+  const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+
+  document.getElementById('res-correct').textContent = correctCount;
+  document.getElementById('res-wrong').textContent = wrongCount;
+  document.getElementById('res-pct').textContent = pct + '%';
+  document.getElementById('result-subtitle').textContent = `${total}문제 중 ${correctCount}문제 정답`;
+
+  let emoji, title;
+  if (pct === 100)     { emoji = '🏆'; title = '완벽해요!'; }
+  else if (pct >= 80)  { emoji = '🎉'; title = '훌륭해요!'; }
+  else if (pct >= 60)  { emoji = '👍'; title = '잘했어요!'; }
+  else if (pct >= 40)  { emoji = '💪'; title = '조금 더 화이팅!'; }
+  else                 { emoji = '🤔'; title = '더 연습해봐요!'; }
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-title').textContent = title;
+
+  // 전체 문제 목록 (맞은 것도 틀린 것도 모두)
+  const list = document.getElementById('result-list');
+  list.innerHTML = '';
+  quizLog.forEach((log, i) => {
+    const item = document.createElement('div');
+    item.className = 'result-item ' + (log.isCorrect ? 'correct-item' : 'wrong-item');
+
+    // 번호
+    const num = document.createElement('div');
+    num.className = 'result-item-num';
+    num.textContent = i + 1;
+
+    // 이미지 두 장
+    const imgs = document.createElement('div');
+    imgs.className = 'result-item-imgs';
+
+    // 실루엣
+    const silDiv = document.createElement('div');
+    silDiv.className = 'result-mini-frame';
+    const silC = document.createElement('canvas');
+    silC.width = 80; silC.height = 80;
+    silDiv.appendChild(silC);
+    drawSilhouette(log.char.path, silC);
+
+    // 원본
+    const colDiv = document.createElement('div');
+    colDiv.className = 'result-mini-frame';
+    const colC = document.createElement('canvas');
+    colC.width = 80; colC.height = 80;
+    colDiv.appendChild(colC);
+    drawColor(log.char.path, colC);
+
+    imgs.appendChild(silDiv);
+    imgs.appendChild(colDiv);
+
+    // 텍스트
+    const info = document.createElement('div');
+    info.className = 'result-item-info';
+    const ansEl = document.createElement('div');
+    ansEl.className = 'result-item-answer ' + (log.isCorrect ? 'correct-answer' : 'wrong-answer');
+    ansEl.textContent = log.char.name;
+    info.appendChild(ansEl);
+
+    if (!log.isCorrect) {
+      const chosen = document.createElement('div');
+      chosen.className = 'result-item-chosen';
+      chosen.textContent = `내 선택: ${log.chosen}`;
+      info.appendChild(chosen);
+    }
+
+    item.appendChild(num);
+    item.appendChild(imgs);
+    item.appendChild(info);
+    list.appendChild(item);
+  });
+
+  showScreen('result-screen');
+  document.getElementById('back-btn').style.display = 'none';
+  document.getElementById('finish-btn').style.display = 'none';
+  document.getElementById('progress-bar').style.width = '100%';
+}
+
+// 공유
+document.getElementById('share-btn').addEventListener('click', () => {
+  const total = quizLog.length;
+  const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+  const text = `[올실루엣 퀴즈] ${total}문제 중 ${correctCount}문제 정답 (${pct}%) 🎯\n실루엣만 보고 캐릭터 맞추기!`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => alert('클립보드에 복사됐어요!'));
+  } else { alert(text); }
+});
+
+document.getElementById('retry-btn').addEventListener('click', startGame);
+document.getElementById('setup-again-btn').addEventListener('click', () => {
+  showScreen('setup-screen');
+  document.getElementById('back-btn').style.display = 'none';
+  document.getElementById('finish-btn').style.display = 'none';
+  validateSetup();
+});
+
+// ══════════════════════════════════════════════
+//  POPUP (custom confirm)
+// ══════════════════════════════════════════════
+let popupCallback = null;
+
+function showPopup(title, msg, onConfirm) {
+  document.getElementById('popup-title').textContent = title;
+  document.getElementById('popup-msg').textContent = msg;
+  popupCallback = onConfirm;
+  document.getElementById('popup-overlay').classList.add('show');
+  // 확인 버튼: callback 없으면 닫기만
+  document.getElementById('popup-confirm').style.display = onConfirm ? 'block' : 'none';
+  document.getElementById('popup-cancel').textContent = onConfirm ? '취소' : '확인';
+}
+
+document.getElementById('popup-cancel').addEventListener('click', () => {
+  document.getElementById('popup-overlay').classList.remove('show');
+  if (!popupCallback) return; // 취소
+});
+document.getElementById('popup-confirm').addEventListener('click', () => {
+  document.getElementById('popup-overlay').classList.remove('show');
+  if (popupCallback) popupCallback();
+});
+document.getElementById('popup-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('popup-overlay'))
+    document.getElementById('popup-overlay').classList.remove('show');
+});
+
+// 처음으로 버튼
+document.getElementById('back-btn').addEventListener('click', () => {
+  showPopup('처음으로 돌아갈까요?', '지금까지의 진행상황이 사라져요.', () => {
+    showScreen('setup-screen');
+    document.getElementById('back-btn').style.display = 'none';
+    document.getElementById('finish-btn').style.display = 'none';
+    document.getElementById('progress-bar').style.width = '0%';
+    validateSetup();
+  });
+});
+
+// ══════════════════════════════════════════════
+//  SCREEN SWITCH
+// ══════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+loadManifest();
+</script>
+</body>
+</html>

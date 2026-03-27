@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>올짤에디터</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gmarket+Sans:wght@300;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --surface2: #22222e;
+    --surface3: #2a2a38;
+    --border: #32324a;
+    --accent: #ff6b6b;
+    --text: #f0f0f8;
+    --text2: #9999bb;
+    --text3: #55556a;
+    --panel-w: 300px;
+    --topbar-h: 56px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  #topbar {
+    height: var(--topbar-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+    flex-shrink: 0;
+    z-index: 100;
+    overflow: hidden;
+  }
+  #topbar .logo {
+    font-family: 'Gmarket Sans', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .tb-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .tb-btn:hover { background: var(--surface3); border-color: var(--accent); }
+  .tb-btn.accent { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+  .tb-btn.accent:hover { opacity: 0.88; }
+  .tb-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+  /* 모바일에서 아이콘 전용 버튼 */
+  .tb-btn.icon-only { padding: 7px 10px; }
+  .tb-btn.icon-only .btn-label { display: none; }
+
+  .tb-sep { width: 1px; height: 24px; background: var(--border); margin: 0 2px; flex-shrink: 0; }
+  .tb-spacer { flex: 1; min-width: 0; }
+  #canvas-size-info { font-size: 11px; color: var(--text3); white-space: nowrap; flex-shrink: 0; }
+
+  /* ── MAIN LAYOUT ── */
+  #main { flex: 1; display: flex; overflow: hidden; }
+
+  /* ── CANVAS AREA ── */
+  #canvas-wrap {
+    flex: 1;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(255,107,107,0.04) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(107,203,119,0.03) 0%, transparent 50%);
+    overflow: auto;
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+  #canvas-outer {
+    min-width: 100%;
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #canvas-container {
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px var(--border), 0 24px 80px rgba(0,0,0,0.6);
+  }
+  #canvas-container canvas { display: block; }
+
+  /* 흐리기 모드일 때 캔버스 커서 */
+  #canvas-container.blur-mode { cursor: crosshair; }
+
+  /* ── RIGHT PANEL ── */
+  #right-panel {
+    width: var(--panel-w);
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .panel-section { border-bottom: 1px solid var(--border); }
+  .panel-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text3);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 14px 16px 10px;
+  }
+
+  /* ── 탭 바 (패널 상단 도구 선택) ── */
+  #tool-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .tool-tab {
+    flex: 1;
+    padding: 10px 4px;
+    border: none;
+    background: transparent;
+    color: var(--text3);
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tool-tab svg { width: 16px; height: 16px; }
+  .tool-tab:hover { color: var(--text2); }
+  .tool-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── 패널 페이지 ── */
+  .panel-page { display: none; flex-direction: column; overflow: hidden; flex: 1; }
+  .panel-page.active { display: flex; }
+
+  /* ── 만능대가리 패널 ── */
+  #sticker-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* 검색 + 탭 행 */
+  #cat-tab-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 8px 8px 8px;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  /* 검색 버튼 */
+  #btn-search-toggle {
+    width: 32px; height: 32px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  #btn-search-toggle:hover, #btn-search-toggle.open { border-color: var(--accent); color: var(--accent); }
+  #btn-search-toggle svg { width: 14px; height: 14px; }
+
+  /* 검색창 (펼쳐질 때) */
+  #search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+    width: 0;
+    transition: width 0.25s ease;
+    flex-shrink: 0;
+  }
+  #search-wrap.open { width: 140px; }
+  #search-input {
+    width: 100%;
+    padding: 5px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--accent);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    min-width: 0;
+  }
+  #search-input::placeholder { color: var(--text3); }
+
+  /* 최근 탭 */
+  #cat-tabs-scroll {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    flex: 1;
+    scrollbar-width: none;
+  }
+  #cat-tabs-scroll::-webkit-scrollbar { display: none; }
+
+  .cat-tab {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    height: 32px;
+    display: flex; align-items: center;
+  }
+  .cat-tab:hover { border-color: var(--accent); color: var(--text); }
+  .cat-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+
+  #sticker-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 12px 12px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    align-content: start;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .sticker-item {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background: var(--surface2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: all 0.15s;
+    padding: 4px;
+  }
+  .sticker-item:hover { border-color: var(--accent); background: var(--surface3); transform: scale(1.06); }
+  .sticker-item img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+
+  /* ── 오브젝트 컨트롤 패널 ── */
+  #obj-controls { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+  #obj-controls.hidden { display: none; }
+  .ctrl-row { display: flex; align-items: center; gap: 8px; }
+  .ctrl-label { font-size: 11px; color: var(--text3); width: 44px; flex-shrink: 0; }
+  .ctrl-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .ctrl-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+  .ctrl-val { font-size: 11px; color: var(--text2); width: 30px; text-align: right; }
+  .ctrl-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ctrl-btn {
+    flex: 1;
+    min-width: 60px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--text); }
+  .ctrl-btn.danger:hover { border-color: #ff4444; color: #ff4444; }
+  .ctrl-btn.active-mode { border-color: var(--accent); color: var(--accent); background: rgba(255,107,107,0.1); }
+
+  /* ── 텍스트 패널 ── */
+  #text-panel { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+  .font-select, .color-input-wrap {
+    display: flex; gap: 6px; align-items: center;
+  }
+  select.ctrl-select {
+    flex: 1;
+    padding: 7px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="color"].color-pick {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    padding: 2px;
+    flex-shrink: 0;
+  }
+  .text-input-area {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    resize: none;
+    min-height: 60px;
+  }
+  .text-input-area:focus { border-color: var(--accent); }
+
+  /* ── 도형 패널 ── */
+  #shape-panel { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+  .shape-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .shape-btn {
+    padding: 10px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+  .shape-btn svg { width: 20px; height: 20px; }
+  .shape-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ── 흐리기 패널 ── */
+  #blur-panel { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+  .blur-levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .blur-level-btn {
+    padding: 10px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .blur-level-btn:hover { border-color: var(--accent); color: var(--text); }
+  .blur-level-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(255,107,107,0.1); }
+  .blur-hint { font-size: 11px; color: var(--text3); line-height: 1.6; }
+  #btn-blur-mode {
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  #btn-blur-mode.active { border-color: var(--accent); background: rgba(255,107,107,0.15); color: var(--accent); }
+  #btn-blur-mode svg { width: 14px; height: 14px; }
+
+  /* ── IMAGE SOURCE ── */
+  #img-source { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .url-row { display: flex; gap: 6px; }
+  .url-input {
+    flex: 1;
+    padding: 7px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+  }
+  .url-input:focus { border-color: var(--accent); }
+  .url-input::placeholder { color: var(--text3); }
+  #drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text3);
+    font-size: 12px;
+  }
+  #drop-zone:hover, #drop-zone.drag-over { border-color: var(--accent); color: var(--accent); background: rgba(255,107,107,0.05); }
+  #drop-zone .dz-icon { font-size: 24px; margin-bottom: 4px; }
+
+  /* ── MOBILE BOTTOM SHEET ── */
+  .mobile-sheet {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    z-index: 200;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    flex-direction: column;
+  }
+  .mobile-sheet.open { transform: translateY(0); }
+  .sheet-handle {
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 12px auto 8px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  /* 스티커 시트 */
+  #mobile-sticker-sheet { max-height: 65dvh; }
+
+  /* 편집 시트 */
+  #mobile-edit-sheet { padding-bottom: 32px; max-height: 80dvh; overflow-y: auto; }
+  #mobile-edit-sheet .sheet-body { padding: 0 20px 8px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── MOBILE BOTTOM BAR ── */
+  #mobile-bar {
+    display: none;
+    height: 60px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    align-items: stretch;
+  }
+  .mbar-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    font-size: 10px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.15s;
+    padding: 0;
+  }
+  .mbar-btn:hover { color: var(--accent); }
+  .mbar-btn svg { width: 20px; height: 20px; }
+
+  #file-input { display: none; }
+
+  /* ── OVERLAY ── */
+  #start-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    pointer-events: none;
+  }
+  #start-overlay.hidden { display: none; }
+  .ov-title { font-family: 'Gmarket Sans', sans-serif; font-size: 22px; font-weight: 700; color: var(--text3); }
+  .ov-sub { font-size: 13px; color: var(--text3); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface3);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    opacity: 0;
+    transition: all 0.25s;
+    z-index: 999;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    :root { --panel-w: 0px; }
+    #right-panel { display: none; }
+    #mobile-bar { display: flex; }
+    #mobile-sticker-sheet, #mobile-edit-sheet { display: flex; }
+    #canvas-wrap { padding: 12px; }
+    #canvas-size-info { display: none; }
+    /* 모바일 탑바: 텍스트 숨기고 아이콘만 */
+    .tb-btn .btn-label { display: none; }
+    .tb-btn { padding: 7px 10px; }
+    #topbar .logo { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <span class="logo">✦ 올짤에디터</span>
+  <div class="tb-sep"></div>
+  <button class="tb-btn" id="btn-upload-top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <span class="btn-label">사진 올리기</span>
+  </button>
+  <span id="canvas-size-info">—</span>
+  <div class="tb-spacer"></div>
+  <button class="tb-btn" id="btn-undo" title="되돌리기">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+    <span class="btn-label">되돌리기</span>
+  </button>
+  <button class="tb-btn" id="btn-redo" title="다시 실행">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
+    <span class="btn-label">다시 실행</span>
+  </button>
+  <button class="tb-btn" id="btn-clear" title="전체 초기화">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    <span class="btn-label">초기화</span>
+  </button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn accent" id="btn-download">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <span class="btn-label">다운로드</span>
+  </button>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- CANVAS -->
+  <div id="canvas-wrap">
+    <div id="canvas-outer">
+      <div id="canvas-container">
+        <canvas id="c"></canvas>
+        <div id="start-overlay">
+          <div class="ov-title">📸 사진을 올려주세요</div>
+          <div class="ov-sub">우측 패널에서 업로드하거나 여기에 드래그해도 돼요</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL (데스크탑) -->
+  <div id="right-panel">
+
+    <!-- 이미지 업로드 -->
+    <div class="panel-section">
+      <div class="panel-title">이미지</div>
+      <div id="img-source">
+        <div id="drop-zone">
+          <div class="dz-icon">🖼️</div>
+          <div>클릭하거나 드래그해서 올리기</div>
+        </div>
+        <div class="url-row">
+          <input class="url-input" id="url-input" type="text" placeholder="이미지 URL 붙여넣기">
+          <button class="tb-btn" id="btn-url-load" style="padding:7px 10px;font-size:12px;">확인</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 도구 탭 -->
+    <div id="tool-tabs">
+      <button class="tool-tab active" data-panel="sticker-page" title="만능대가리">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        대가리
+      </button>
+      <button class="tool-tab" data-panel="edit-page" title="선택/편집">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        편집
+      </button>
+      <button class="tool-tab" data-panel="text-page" title="텍스트">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+        텍스트
+      </button>
+      <button class="tool-tab" data-panel="shape-page" title="도형">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        도형
+      </button>
+      <button class="tool-tab" data-panel="blur-page" title="흐리기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        흐리기
+      </button>
+    </div>
+
+    <!-- 만능대가리 패널 -->
+    <div class="panel-page active" id="sticker-page">
+      <div id="sticker-section">
+        <div id="cat-tab-row">
+          <button id="btn-search-toggle" title="검색">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <div id="search-wrap">
+            <input id="search-input" type="text" placeholder="검색...">
+          </div>
+          <div id="cat-tabs-scroll">
+            <!-- [최근] 탭 + 카테고리 탭들이 JS로 삽입됨 -->
+          </div>
+        </div>
+        <div id="sticker-grid"></div>
+      </div>
+    </div>
+
+    <!-- 편집 패널 -->
+    <div class="panel-page" id="edit-page">
+      <div class="panel-title">선택된 오브젝트</div>
+      <div id="obj-controls" class="hidden">
+        <div class="ctrl-row">
+          <span class="ctrl-label">크기</span>
+          <input type="range" class="ctrl-slider" id="sl-scale" min="10" max="300" value="100">
+          <span class="ctrl-val" id="val-scale">100%</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">회전</span>
+          <input type="range" class="ctrl-slider" id="sl-rotate" min="0" max="360" value="0">
+          <span class="ctrl-val" id="val-rotate">0°</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">투명도</span>
+          <input type="range" class="ctrl-slider" id="sl-opacity" min="0" max="100" value="100">
+          <span class="ctrl-val" id="val-opacity">100%</span>
+        </div>
+        <div class="ctrl-btns">
+          <button class="ctrl-btn" id="btn-flip-h">↔ 좌우반전</button>
+          <button class="ctrl-btn" id="btn-flip-v">↕ 상하반전</button>
+          <button class="ctrl-btn" id="btn-bring-front">앞으로</button>
+          <button class="ctrl-btn" id="btn-send-back">뒤로</button>
+          <button class="ctrl-btn danger" id="btn-delete">🗑 삭제</button>
+        </div>
+      </div>
+      <div id="obj-empty" style="padding:12px 16px;font-size:12px;color:var(--text3);">
+        오브젝트를 클릭하면 조절할 수 있어요
+      </div>
+    </div>
+
+    <!-- 텍스트 패널 -->
+    <div class="panel-page" id="text-page">
+      <div class="panel-title">텍스트 삽입</div>
+      <div id="text-panel">
+        <textarea class="text-input-area" id="text-content" placeholder="텍스트 입력..."></textarea>
+        <div class="ctrl-row">
+          <span class="ctrl-label">폰트</span>
+          <select class="ctrl-select" id="text-font">
+            <option value="Noto Sans KR">노토산스</option>
+            <option value="Gmarket Sans">지마켓산스</option>
+            <option value="serif">명조</option>
+          </select>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">크기</span>
+          <input type="range" class="ctrl-slider" id="text-size" min="10" max="200" value="40">
+          <span class="ctrl-val" id="val-text-size">40</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">색상</span>
+          <input type="color" class="color-pick" id="text-color" value="#ffffff">
+          <input type="color" class="color-pick" id="text-stroke-color" value="#000000" title="외곽선 색상">
+          <span style="font-size:10px;color:var(--text3)">글자 / 외곽선</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">외곽선</span>
+          <input type="range" class="ctrl-slider" id="text-stroke-width" min="0" max="10" value="0">
+          <span class="ctrl-val" id="val-stroke-w">0</span>
+        </div>
+        <button class="ctrl-btn" id="btn-add-text" style="width:100%;padding:10px;">+ 텍스트 추가</button>
+      </div>
+    </div>
+
+    <!-- 도형 패널 -->
+    <div class="panel-page" id="shape-page">
+      <div class="panel-title">도형 삽입</div>
+      <div id="shape-panel">
+        <div class="shape-btns">
+          <button class="shape-btn" id="btn-add-rect">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="1"/></svg>
+            사각형
+          </button>
+          <button class="shape-btn" id="btn-add-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+            원
+          </button>
+          <button class="shape-btn" id="btn-add-line">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="20" x2="20" y2="4"/></svg>
+            선
+          </button>
+        </div>
+        <div class="ctrl-row" style="margin-top:4px;">
+          <span class="ctrl-label">채우기</span>
+          <input type="color" class="color-pick" id="shape-fill" value="#ff6b6b">
+          <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;margin-left:4px;">
+            <input type="checkbox" id="shape-fill-none"> 없음
+          </label>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">테두리</span>
+          <input type="color" class="color-pick" id="shape-stroke" value="#ffffff">
+          <input type="range" class="ctrl-slider" id="shape-stroke-w" min="0" max="20" value="2">
+          <span class="ctrl-val" id="val-shape-stroke">2</span>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">투명도</span>
+          <input type="range" class="ctrl-slider" id="shape-opacity" min="10" max="100" value="100">
+          <span class="ctrl-val" id="val-shape-opacity">100%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 흐리기 패널 -->
+    <div class="panel-page" id="blur-page">
+      <div class="panel-title">흐리기</div>
+      <div id="blur-panel">
+        <p class="blur-hint">영역을 드래그해서 흐리기를 적용해요. 사각형 영역이 생성됩니다.</p>
+        <div>
+          <div class="panel-title" style="padding:8px 0 6px;">강도</div>
+          <div class="blur-levels">
+            <button class="blur-level-btn" data-blur="5">약하게</button>
+            <button class="blur-level-btn active" data-blur="15">보통</button>
+            <button class="blur-level-btn" data-blur="30">강하게</button>
+          </div>
+        </div>
+        <button id="btn-blur-mode">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          흐리기 모드 켜기
+        </button>
+        <p class="blur-hint" style="font-size:10px;">흐리기 모드 ON 상태에서 캔버스를 드래그하면 해당 영역이 흐려져요.</p>
+      </div>
+    </div>
+
+  </div><!-- /right-panel -->
+</div><!-- /main -->
+
+<!-- MOBILE BOTTOM BAR -->
+<div id="mobile-bar">
+  <button class="mbar-btn" id="mb-upload" title="사진 올리기">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    사진
+  </button>
+  <button class="mbar-btn" id="mb-stickers" title="만능대가리">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+    대가리
+  </button>
+  <button class="mbar-btn" id="mb-edit" title="편집">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    편집
+  </button>
+  <button class="mbar-btn" id="mb-undo" title="되돌리기">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+    되돌리기
+  </button>
+  <button class="mbar-btn" id="mb-download" title="저장" style="color:var(--accent)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    저장
+  </button>
+</div>
+
+<!-- MOBILE 만능대가리 SHEET -->
+<div class="mobile-sheet" id="mobile-sticker-sheet">
+  <div class="sheet-handle" id="sheet-handle"></div>
+  <div style="padding:0 8px 6px;">
+    <div style="display:flex;align-items:center;gap:4px;padding:4px 0;">
+      <button id="btn-search-toggle-m" style="width:32px;height:32px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <div id="search-wrap-m" style="display:flex;align-items:center;overflow:hidden;width:0;transition:width 0.25s ease;flex-shrink:0;">
+        <input id="search-input-m" type="text" placeholder="검색..." style="width:100%;padding:5px 10px;border-radius:20px;border:1px solid var(--accent);background:var(--surface2);color:var(--text);font-size:12px;font-family:inherit;outline:none;min-width:0;">
+      </div>
+      <div id="cat-tabs-m" style="display:flex;gap:4px;overflow-x:auto;flex:1;scrollbar-width:none;"></div>
+    </div>
+  </div>
+  <div id="sticker-grid-m" style="flex:1;overflow-y:auto;padding:4px 12px 24px;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;align-content:start"></div>
+</div>
+
+<!-- MOBILE EDIT SHEET -->
+<div class="mobile-sheet" id="mobile-edit-sheet">
+  <div class="sheet-handle" id="edit-sheet-handle"></div>
+  <div class="sheet-body">
+    <div id="mobile-obj-empty" style="font-size:12px;color:var(--text3);text-align:center;padding:8px 0;">오브젝트를 먼저 선택해주세요</div>
+    <div id="mobile-obj-controls" style="display:none;flex-direction:column;gap:12px;">
+      <div class="ctrl-row">
+        <span class="ctrl-label">크기</span>
+        <input type="range" class="ctrl-slider" id="sl-scale-m" min="10" max="300" value="100">
+        <span class="ctrl-val" id="val-scale-m">100%</span>
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">회전</span>
+        <input type="range" class="ctrl-slider" id="sl-rotate-m" min="0" max="360" value="0">
+        <span class="ctrl-val" id="val-rotate-m">0°</span>
+      </div>
+      <div class="ctrl-row">
+        <span class="ctrl-label">투명도</span>
+        <input type="range" class="ctrl-slider" id="sl-opacity-m" min="0" max="100" value="100">
+        <span class="ctrl-val" id="val-opacity-m">100%</span>
+      </div>
+      <div class="ctrl-btns">
+        <button class="ctrl-btn" id="btn-flip-h-m">↔ 좌우반전</button>
+        <button class="ctrl-btn" id="btn-flip-v-m">↕ 상하반전</button>
+        <button class="ctrl-btn" id="btn-bring-front-m">앞으로</button>
+        <button class="ctrl-btn" id="btn-send-back-m">뒤로</button>
+        <button class="ctrl-btn danger" id="btn-delete-m">🗑 삭제</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept="image/*">
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  RECENT (최근 사용 만능대가리) — localStorage
+// ══════════════════════════════════════════════
+const RECENT_KEY = 'olzzal_recent_stickers';
+const RECENT_MAX = 30;
+
+function getRecent() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch { return []; }
+}
+function addRecent(src) {
+  let arr = getRecent();
+  arr = arr.filter(s => s !== src);
+  arr.unshift(src);
+  if (arr.length > RECENT_MAX) arr = arr.slice(0, RECENT_MAX);
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(arr)); } catch {}
+}
+
+// ══════════════════════════════════════════════
+//  MANIFEST 로드
+// ══════════════════════════════════════════════
+let MANIFEST = { categories: [] };
+
+async function loadManifest() {
+  try {
+    const res = await fetch('./img/manifest.json');
+    if (!res.ok) throw new Error('not found');
+    MANIFEST = await res.json();
+  } catch {
+    MANIFEST = {
+      categories: [{
+        id: 'demo', label: '데모샘플',
+        stickers: [
+          'https://em-content.zobj.net/source/apple/391/grinning-face_1f600.png',
+          'https://em-content.zobj.net/source/apple/391/face-with-tears-of-joy_1f602.png',
+          'https://em-content.zobj.net/source/apple/391/smiling-face-with-heart-eyes_1f60d.png',
+          'https://em-content.zobj.net/source/apple/391/star-struck_1f929.png',
+          'https://em-content.zobj.net/source/apple/391/fire_1f525.png',
+          'https://em-content.zobj.net/source/apple/391/sparkles_2728.png',
+          'https://em-content.zobj.net/source/apple/391/red-heart_2764-fe0f.png',
+          'https://em-content.zobj.net/source/apple/391/star_2b50.png',
+        ]
+      }]
+    };
+  }
+  buildStickerUI(
+    document.getElementById('cat-tabs-scroll'),
+    document.getElementById('sticker-grid'),
+    document.getElementById('search-input')
+  );
+  buildStickerUI(
+    document.getElementById('cat-tabs-m'),
+    document.getElementById('sticker-grid-m'),
+    document.getElementById('search-input-m')
+  );
+}
+
+// ══════════════════════════════════════════════
+//  CANVAS
+// ══════════════════════════════════════════════
+const MAX_DIM = 4000;
+let canvasW = 800, canvasH = 600, displayScale = 1;
+
+const canvas = new fabric.Canvas('c', {
+  backgroundColor: '#ffffff',
+  selection: true,
+  preserveObjectStacking: true,
+});
+
+function applyDisplayScale() {
+  const wrap = document.getElementById('canvas-wrap');
+  const topbar = document.getElementById('topbar');
+  const mbar = document.getElementById('mobile-bar');
+  const isMobile = window.innerWidth <= 768;
+  const availW = wrap.clientWidth - 48;
+  const availH = window.innerHeight - topbar.offsetHeight - (isMobile ? mbar.offsetHeight : 0) - 48;
+  displayScale = Math.min(availW / canvasW, availH / canvasH, 1);
+  displayScale = Math.max(displayScale, 0.05);
+  canvas.setDimensions({ width: Math.round(canvasW * displayScale), height: Math.round(canvasH * displayScale) });
+  canvas.setZoom(displayScale);
+  canvas.renderAll();
+  document.getElementById('canvas-size-info').textContent = `${canvasW} × ${canvasH}px`;
+}
+window.addEventListener('resize', applyDisplayScale);
+
+// ══════════════════════════════════════════════
+//  HISTORY — Undo / Redo
+// ══════════════════════════════════════════════
+let undoStack = [];
+let redoStack = [];
+let isStepping = false;
+
+function saveHistory() {
+  if (isStepping) return;
+  undoStack.push(JSON.stringify(canvas));
+  if (undoStack.length > 40) undoStack.shift();
+  redoStack = []; // 새 액션이 생기면 redo 초기화
+}
+canvas.on('object:added',    saveHistory);
+canvas.on('object:modified', saveHistory);
+canvas.on('object:removed',  saveHistory);
+
+function undo() {
+  if (undoStack.length < 2) { showToast('더 이상 되돌릴 수 없어요'); return; }
+  isStepping = true;
+  redoStack.push(undoStack.pop());
+  canvas.loadFromJSON(undoStack[undoStack.length - 1], () => { canvas.renderAll(); isStepping = false; });
+}
+function redo() {
+  if (redoStack.length === 0) { showToast('다시 실행할 내용이 없어요'); return; }
+  isStepping = true;
+  const state = redoStack.pop();
+  undoStack.push(state);
+  canvas.loadFromJSON(state, () => { canvas.renderAll(); isStepping = false; });
+}
+
+document.getElementById('btn-undo').addEventListener('click', undo);
+document.getElementById('btn-redo').addEventListener('click', redo);
+document.getElementById('mb-undo').addEventListener('click', undo);
+
+// ══════════════════════════════════════════════
+//  CLEAR — 전체 초기화
+// ══════════════════════════════════════════════
+document.getElementById('btn-clear').addEventListener('click', () => {
+  if (!confirm('캔버스를 전체 초기화할까요?')) return;
+  canvas.clear();
+  canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
+  canvasW = 800; canvasH = 600;
+  applyDisplayScale();
+  document.getElementById('start-overlay').classList.remove('hidden');
+  document.getElementById('canvas-size-info').textContent = '—';
+  undoStack = []; redoStack = [];
+  showToast('초기화 완료');
+});
+
+// ══════════════════════════════════════════════
+//  IMAGE UPLOAD
+// ══════════════════════════════════════════════
+function loadImageToCanvas(src) {
+  fabric.Image.fromURL(src, img => {
+    if (!img?.width) { showToast('이미지를 불러올 수 없어요'); return; }
+    let w = img.width, h = img.height;
+    if (w > MAX_DIM || h > MAX_DIM) {
+      const r = Math.min(MAX_DIM / w, MAX_DIM / h);
+      w = Math.round(w * r); h = Math.round(h * r);
+    }
+    canvasW = w; canvasH = h;
+    canvas.getObjects().filter(o => o._isBackground).forEach(o => canvas.remove(o));
+    img.set({ scaleX: w / img.width, scaleY: h / img.height, left: 0, top: 0, selectable: false, evented: false, _isBackground: true });
+    canvas.add(img);
+    canvas.sendToBack(img);
+    applyDisplayScale();
+    document.getElementById('start-overlay').classList.add('hidden');
+    showToast('이미지를 불러왔어요 ✓');
+  }, { crossOrigin: 'anonymous' });
+}
+
+const fileInput = document.getElementById('file-input');
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => loadImageToCanvas(ev.target.result);
+  reader.readAsDataURL(file);
+  fileInput.value = '';
+});
+document.getElementById('btn-upload-top').addEventListener('click', () => fileInput.click());
+document.getElementById('mb-upload').addEventListener('click', () => { closeMobileSheets(); fileInput.click(); });
+
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file?.type.startsWith('image/')) { const r = new FileReader(); r.onload = ev => loadImageToCanvas(ev.target.result); r.readAsDataURL(file); }
+});
+
+const canvasWrapEl = document.getElementById('canvas-wrap');
+canvasWrapEl.addEventListener('dragover', e => e.preventDefault());
+canvasWrapEl.addEventListener('drop', e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file?.type.startsWith('image/')) { const r = new FileReader(); r.onload = ev => loadImageToCanvas(ev.target.result); r.readAsDataURL(file); }
+});
+
+document.getElementById('btn-url-load').addEventListener('click', () => {
+  const url = document.getElementById('url-input').value.trim();
+  if (url) loadImageToCanvas(url);
+});
+document.getElementById('url-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btn-url-load').click(); });
+
+// ══════════════════════════════════════════════
+//  만능대가리 그리드 + 검색 + 최근
+// ══════════════════════════════════════════════
+// 각 UI 인스턴스(데스크탑/모바일)를 독립적으로 관리
+const uiInstances = [];
+
+function buildStickerUI(tabsScrollEl, gridEl, searchInputEl) {
+  const inst = { tabsScrollEl, gridEl, searchInputEl, currentStickers: [], searchOpen: false };
+  uiInstances.push(inst);
+
+  // [최근] 탭
+  const recentTab = document.createElement('button');
+  recentTab.className = 'cat-tab';
+  recentTab.textContent = '최근';
+  recentTab.addEventListener('click', () => {
+    setActiveTab(inst, recentTab);
+    inst.currentStickers = getRecent();
+    renderGrid(inst, inst.currentStickers);
+  });
+  tabsScrollEl.appendChild(recentTab);
+
+  // 카테고리 탭
+  MANIFEST.categories.forEach((cat, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-tab' + (i === 0 ? ' active' : '');
+    btn.textContent = cat.label;
+    btn.addEventListener('click', () => {
+      setActiveTab(inst, btn);
+      inst.currentStickers = cat.stickers;
+      renderGrid(inst, cat.stickers);
+    });
+    tabsScrollEl.appendChild(btn);
+  });
+
+  // 첫 카테고리 렌더
+  if (MANIFEST.categories.length > 0) {
+    inst.currentStickers = MANIFEST.categories[0].stickers;
+    renderGrid(inst, inst.currentStickers);
+  }
+}
+
+function setActiveTab(inst, activeBtn) {
+  inst.tabsScrollEl.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+  activeBtn.classList.add('active');
+}
+
+function renderGrid(inst, stickers) {
+  inst.gridEl.innerHTML = '';
+  stickers.forEach(src => {
+    const item = document.createElement('div');
+    item.className = 'sticker-item';
+    const img = document.createElement('img');
+    img.src = src; img.loading = 'lazy'; img.alt = '';
+    item.appendChild(img);
+    item.addEventListener('click', () => addSticker(src));
+    inst.gridEl.appendChild(item);
+  });
+}
+
+function filterGrid(inst, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) { renderGrid(inst, inst.currentStickers); return; }
+  // 파일명 기반 검색
+  const all = MANIFEST.categories.flatMap(c => c.stickers);
+  const filtered = all.filter(s => {
+    const name = s.split('/').pop().replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').toLowerCase();
+    return name.includes(q);
+  });
+  renderGrid(inst, filtered);
+  if (filtered.length === 0) inst.gridEl.innerHTML = '<div style="padding:16px;font-size:12px;color:var(--text3);grid-column:1/-1;">검색 결과 없음</div>';
+}
+
+// 검색 토글 (데스크탑)
+const btnSearchToggle = document.getElementById('btn-search-toggle');
+const searchWrap = document.getElementById('search-wrap');
+const searchInput = document.getElementById('search-input');
+btnSearchToggle.addEventListener('click', () => {
+  const open = !searchWrap.classList.contains('open');
+  searchWrap.classList.toggle('open', open);
+  btnSearchToggle.classList.toggle('open', open);
+  if (open) { searchInput.focus(); }
+  else { searchInput.value = ''; uiInstances[0] && filterGrid(uiInstances[0], ''); }
+});
+searchInput.addEventListener('input', () => { uiInstances[0] && filterGrid(uiInstances[0], searchInput.value); });
+
+// 검색 토글 (모바일)
+const btnSearchToggleM = document.getElementById('btn-search-toggle-m');
+const searchWrapM = document.getElementById('search-wrap-m');
+const searchInputM = document.getElementById('search-input-m');
+btnSearchToggleM.addEventListener('click', () => {
+  const open = !searchWrapM.classList.contains('open');
+  searchWrapM.style.width = open ? '140px' : '0';
+  searchWrapM.classList.toggle('open', open);
+  if (open) searchInputM.focus();
+  else { searchInputM.value = ''; uiInstances[1] && filterGrid(uiInstances[1], ''); }
+});
+searchInputM.addEventListener('input', () => { uiInstances[1] && filterGrid(uiInstances[1], searchInputM.value); });
+
+function addSticker(src) {
+  addRecent(src);
+  fabric.Image.fromURL(src, img => {
+    const maxDim = Math.min(canvasW, canvasH) * 0.25;
+    const s = maxDim / Math.max(img.width, img.height);
+    img.set({ scaleX: s, scaleY: s, left: canvasW / 2, top: canvasH / 2, originX: 'center', originY: 'center' });
+    canvas.add(img);
+    canvas.setActiveObject(img);
+    canvas.renderAll();
+    showToast('만능대가리 추가! ✓');
+    closeMobileSheets();
+  }, { crossOrigin: 'anonymous' });
+}
+
+// ══════════════════════════════════════════════
+//  OBJECT CONTROLS
+// ══════════════════════════════════════════════
+let selectedObj = null;
+
+canvas.on('selection:created', updateControls);
+canvas.on('selection:updated', updateControls);
+canvas.on('selection:cleared', () => {
+  selectedObj = null;
+  document.getElementById('obj-controls').classList.add('hidden');
+  document.getElementById('obj-empty').style.display = '';
+  document.getElementById('mobile-obj-controls').style.display = 'none';
+  document.getElementById('mobile-obj-empty').style.display = '';
+});
+
+function updateControls(e) {
+  selectedObj = e.selected?.[0] ?? canvas.getActiveObject();
+  if (!selectedObj || selectedObj._isBackground) return;
+
+  // 데스크탑 패널
+  document.getElementById('obj-controls').classList.remove('hidden');
+  document.getElementById('obj-empty').style.display = 'none';
+  // 모바일 패널
+  document.getElementById('mobile-obj-controls').style.display = 'flex';
+  document.getElementById('mobile-obj-empty').style.display = 'none';
+
+  const sv = Math.round(Math.max(selectedObj.scaleX, selectedObj.scaleY) * 100);
+  const rv = Math.round(selectedObj.angle || 0);
+  const ov = Math.round((selectedObj.opacity ?? 1) * 100);
+  setSlider('sl-scale','val-scale',sv,'%');   setSlider('sl-scale-m','val-scale-m',sv,'%');
+  setSlider('sl-rotate','val-rotate',rv,'°'); setSlider('sl-rotate-m','val-rotate-m',rv,'°');
+  setSlider('sl-opacity','val-opacity',ov,'%'); setSlider('sl-opacity-m','val-opacity-m',ov,'%');
+}
+
+function setSlider(sId, vId, val, unit) {
+  const s = document.getElementById(sId), v = document.getElementById(vId);
+  if (s) s.value = val; if (v) v.textContent = val + unit;
+}
+
+function bindSlider(sId, vId, unit, applyFn) {
+  const sl = document.getElementById(sId), vl = document.getElementById(vId);
+  if (!sl) return;
+  sl.addEventListener('input', () => {
+    vl.textContent = sl.value + unit;
+    if (selectedObj) { applyFn(selectedObj, Number(sl.value)); canvas.renderAll(); }
+  });
+}
+// 데스크탑 슬라이더
+bindSlider('sl-scale','val-scale','%',(o,v)=>{ o.set({scaleX:v/100,scaleY:v/100}); syncSlider('sl-scale-m','val-scale-m',v,'%'); });
+bindSlider('sl-rotate','val-rotate','°',(o,v)=>{ o.set({angle:v}); syncSlider('sl-rotate-m','val-rotate-m',v,'°'); });
+bindSlider('sl-opacity','val-opacity','%',(o,v)=>{ o.set({opacity:v/100}); syncSlider('sl-opacity-m','val-opacity-m',v,'%'); });
+// 모바일 슬라이더
+bindSlider('sl-scale-m','val-scale-m','%',(o,v)=>{ o.set({scaleX:v/100,scaleY:v/100}); syncSlider('sl-scale','val-scale',v,'%'); });
+bindSlider('sl-rotate-m','val-rotate-m','°',(o,v)=>{ o.set({angle:v}); syncSlider('sl-rotate','val-rotate',v,'°'); });
+bindSlider('sl-opacity-m','val-opacity-m','%',(o,v)=>{ o.set({opacity:v/100}); syncSlider('sl-opacity','val-opacity',v,'%'); });
+
+function syncSlider(id, vId, val, unit) {
+  const el = document.getElementById(id), vl = document.getElementById(vId);
+  if (el) el.value = val; if (vl) vl.textContent = val + unit;
+}
+
+function bindBtn(id, fn) { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); }
+
+const flipH      = () => { if (selectedObj) { selectedObj.set('flipX', !selectedObj.flipX); canvas.renderAll(); }};
+const flipV      = () => { if (selectedObj) { selectedObj.set('flipY', !selectedObj.flipY); canvas.renderAll(); }};
+const bringFront = () => { if (selectedObj) { canvas.bringToFront(selectedObj); canvas.renderAll(); }};
+const sendBack   = () => { if (selectedObj) { canvas.sendBackwards(selectedObj); canvas.renderAll(); }};
+const deleteObj  = () => { if (selectedObj) { canvas.remove(selectedObj); selectedObj = null; canvas.renderAll(); }};
+
+bindBtn('btn-flip-h',flipH);          bindBtn('btn-flip-h-m',flipH);
+bindBtn('btn-flip-v',flipV);          bindBtn('btn-flip-v-m',flipV);
+bindBtn('btn-bring-front',bringFront); bindBtn('btn-bring-front-m',bringFront);
+bindBtn('btn-send-back',sendBack);    bindBtn('btn-send-back-m',sendBack);
+bindBtn('btn-delete',deleteObj);      bindBtn('btn-delete-m',deleteObj);
+
+document.addEventListener('keydown', e => {
+  if ((e.key==='Delete'||e.key==='Backspace') && selectedObj && !e.target.matches('input,textarea')) deleteObj();
+  if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); undo(); }
+  if ((e.ctrlKey||e.metaKey) && e.key==='y') { e.preventDefault(); redo(); }
+});
+
+// ══════════════════════════════════════════════
+//  TEXT 삽입
+// ══════════════════════════════════════════════
+document.getElementById('text-size').addEventListener('input', function() {
+  document.getElementById('val-text-size').textContent = this.value;
+});
+document.getElementById('text-stroke-width').addEventListener('input', function() {
+  document.getElementById('val-stroke-w').textContent = this.value;
+});
+
+document.getElementById('btn-add-text').addEventListener('click', () => {
+  const content = document.getElementById('text-content').value.trim() || '텍스트';
+  const font    = document.getElementById('text-font').value;
+  const size    = parseInt(document.getElementById('text-size').value);
+  const color   = document.getElementById('text-color').value;
+  const strokeColor = document.getElementById('text-stroke-color').value;
+  const strokeW = parseInt(document.getElementById('text-stroke-width').value);
+
+  const text = new fabric.IText(content, {
+    left: canvasW / 2, top: canvasH / 2,
+    originX: 'center', originY: 'center',
+    fontFamily: font,
+    fontSize: size,
+    fill: color,
+    stroke: strokeW > 0 ? strokeColor : null,
+    strokeWidth: strokeW,
+    paintFirst: 'stroke',
+  });
+  canvas.add(text);
+  canvas.setActiveObject(text);
+  canvas.renderAll();
+  showToast('텍스트 추가 ✓');
+});
+
+// ══════════════════════════════════════════════
+//  SHAPE 삽입
+// ══════════════════════════════════════════════
+document.getElementById('shape-stroke-w').addEventListener('input', function() {
+  document.getElementById('val-shape-stroke').textContent = this.value;
+});
+document.getElementById('shape-opacity').addEventListener('input', function() {
+  document.getElementById('val-shape-opacity').textContent = this.value + '%';
+});
+
+function getShapeProps() {
+  const fillNone = document.getElementById('shape-fill-none').checked;
+  return {
+    fill:        fillNone ? 'transparent' : document.getElementById('shape-fill').value,
+    stroke:      document.getElementById('shape-stroke').value,
+    strokeWidth: parseInt(document.getElementById('shape-stroke-w').value),
+    opacity:     parseInt(document.getElementById('shape-opacity').value) / 100,
+  };
+}
+
+document.getElementById('btn-add-rect').addEventListener('click', () => {
+  const p = getShapeProps();
+  const r = new fabric.Rect({ width: canvasW * 0.3, height: canvasH * 0.2, left: canvasW/2, top: canvasH/2, originX:'center', originY:'center', ...p });
+  canvas.add(r); canvas.setActiveObject(r); canvas.renderAll(); showToast('사각형 추가 ✓');
+});
+document.getElementById('btn-add-circle').addEventListener('click', () => {
+  const p = getShapeProps();
+  const c = new fabric.Circle({ radius: Math.min(canvasW, canvasH) * 0.12, left: canvasW/2, top: canvasH/2, originX:'center', originY:'center', ...p });
+  canvas.add(c); canvas.setActiveObject(c); canvas.renderAll(); showToast('원 추가 ✓');
+});
+document.getElementById('btn-add-line').addEventListener('click', () => {
+  const p = getShapeProps();
+  const l = new fabric.Line([canvasW*0.2, canvasH*0.5, canvasW*0.8, canvasH*0.5], { stroke: p.stroke, strokeWidth: Math.max(p.strokeWidth, 2), opacity: p.opacity });
+  canvas.add(l); canvas.setActiveObject(l); canvas.renderAll(); showToast('선 추가 ✓');
+});
+
+// ══════════════════════════════════════════════
+//  BLUR — 흐리기 (드래그로 영역 선택)
+// ══════════════════════════════════════════════
+let blurMode = false;
+let blurLevel = 15;
+let blurStartX = 0, blurStartY = 0, blurRect = null;
+
+document.querySelectorAll('.blur-level-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.blur-level-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    blurLevel = parseInt(btn.dataset.blur);
+  });
+});
+
+const btnBlurMode = document.getElementById('btn-blur-mode');
+btnBlurMode.addEventListener('click', () => {
+  blurMode = !blurMode;
+  btnBlurMode.classList.toggle('active', blurMode);
+  btnBlurMode.innerHTML = blurMode
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> 흐리기 모드 끄기`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> 흐리기 모드 켜기`;
+  document.getElementById('canvas-container').classList.toggle('blur-mode', blurMode);
+  // 흐리기 모드일 때 캔버스 선택 비활성화
+  canvas.selection = !blurMode;
+  canvas.forEachObject(o => { o.selectable = !blurMode; });
+});
+
+// 흐리기 드래그 이벤트
+canvas.on('mouse:down', opt => {
+  if (!blurMode) return;
+  const p = canvas.getPointer(opt.e);
+  blurStartX = p.x; blurStartY = p.y;
+  blurRect = new fabric.Rect({
+    left: blurStartX, top: blurStartY,
+    width: 1, height: 1,
+    fill: 'rgba(100,100,255,0.15)',
+    stroke: 'rgba(100,100,255,0.6)',
+    strokeWidth: 1 / displayScale,
+    selectable: false, evented: false,
+    _isBlurPreview: true,
+  });
+  canvas.add(blurRect);
+});
+
+canvas.on('mouse:move', opt => {
+  if (!blurMode || !blurRect) return;
+  const p = canvas.getPointer(opt.e);
+  const w = p.x - blurStartX, h = p.y - blurStartY;
+  blurRect.set({
+    left:   w < 0 ? p.x : blurStartX,
+    top:    h < 0 ? p.y : blurStartY,
+    width:  Math.abs(w),
+    height: Math.abs(h),
+  });
+  canvas.renderAll();
+});
+
+canvas.on('mouse:up', opt => {
+  if (!blurMode || !blurRect) return;
+  const r = blurRect;
+  canvas.remove(r);
+
+  const bx = r.left, by = r.top, bw = r.width, bh = r.height;
+  if (bw < 4 || bh < 4) { blurRect = null; return; }
+
+  // 해당 영역을 캡처해서 blur 필터 적용한 이미지로 대체
+  applyBlurToRegion(bx, by, bw, bh, blurLevel);
+  blurRect = null;
+});
+
+function applyBlurToRegion(x, y, w, h, blur) {
+  // 캔버스를 원본 해상도로 렌더링 후 해당 영역만 잘라 blur 적용
+  canvas.discardActiveObject();
+  canvas.renderAll();
+
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width  = Math.round(w);
+  tempCanvas.height = Math.round(h);
+  const ctx = tempCanvas.getContext('2d');
+
+  // displayScale 고려해서 실제 픽셀 영역 계산
+  const srcCanvas = canvas.getElement();
+  ctx.filter = `blur(${blur}px)`;
+  ctx.drawImage(srcCanvas,
+    Math.round(x * displayScale), Math.round(y * displayScale),
+    Math.round(w * displayScale), Math.round(h * displayScale),
+    0, 0, Math.round(w), Math.round(h)
+  );
+
+  const dataURL = tempCanvas.toDataURL();
+  fabric.Image.fromURL(dataURL, img => {
+    img.set({
+      left: x, top: y,
+      scaleX: w / img.width,
+      scaleY: h / img.height,
+      selectable: true, evented: true,
+      _isBlur: true,
+    });
+    canvas.add(img);
+    // 흐리기 오브젝트가 선택되면 모드 복원
+    canvas.setActiveObject(img);
+    canvas.renderAll();
+    showToast('흐리기 적용 ✓');
+  });
+}
+
+// ══════════════════════════════════════════════
+//  DOWNLOAD
+// ══════════════════════════════════════════════
+function download() {
+  canvas.discardActiveObject(); canvas.renderAll();
+  const dataURL = canvas.toDataURL({ format: 'png', multiplier: 1 / displayScale });
+  const a = document.createElement('a');
+  a.href = dataURL; a.download = 'olzzal-edit.png'; a.click();
+  showToast('저장 완료! 🎉');
+}
+document.getElementById('btn-download').addEventListener('click', download);
+document.getElementById('mb-download').addEventListener('click', download);
+
+// ══════════════════════════════════════════════
+//  DESKTOP TOOL TABS
+// ══════════════════════════════════════════════
+document.querySelectorAll('.tool-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel-page').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.panel).classList.add('active');
+  });
+});
+
+// ══════════════════════════════════════════════
+//  MOBILE SHEETS
+// ══════════════════════════════════════════════
+const stickerSheet = document.getElementById('mobile-sticker-sheet');
+const editSheet    = document.getElementById('mobile-edit-sheet');
+
+function openSheet(sheet) {
+  closeMobileSheets();
+  sheet.style.display = 'flex';
+  requestAnimationFrame(() => sheet.classList.add('open'));
+}
+function closeMobileSheets() {
+  [stickerSheet, editSheet].forEach(s => {
+    s.classList.remove('open');
+    setTimeout(() => { if (!s.classList.contains('open')) s.style.display = 'none'; }, 300);
+  });
+}
+
+document.getElementById('mb-stickers').addEventListener('click', () => openSheet(stickerSheet));
+document.getElementById('mb-edit').addEventListener('click', () => {
+  openSheet(editSheet);
+  // 선택된 오브젝트 있으면 컨트롤 표시
+  if (selectedObj && !selectedObj._isBackground) {
+    document.getElementById('mobile-obj-controls').style.display = 'flex';
+    document.getElementById('mobile-obj-empty').style.display = 'none';
+  }
+});
+
+document.getElementById('sheet-handle').addEventListener('click', closeMobileSheets);
+document.getElementById('edit-sheet-handle').addEventListener('click', closeMobileSheets);
+
+// 시트 외부 클릭 닫기
+document.addEventListener('click', e => {
+  if (stickerSheet.classList.contains('open') && !stickerSheet.contains(e.target) && !e.target.closest('#mb-stickers')) closeMobileSheets();
+  if (editSheet.classList.contains('open') && !editSheet.contains(e.target) && !e.target.closest('#mb-edit')) closeMobileSheets();
+});
+
+// ══════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+applyDisplayScale();
+loadManifest();
+</script>
+</body>
+</html>
