@@ -115,6 +115,41 @@
 
   /* 흐리기 모드일 때 캔버스 커서 */
   #canvas-container.blur-mode { cursor: crosshair; }
+  #canvas-container.eraser-mode { cursor: none; }
+
+  /* ── 모드 상태 표시 바 ── */
+  #mode-statusbar {
+    display: none;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15,15,19,0.88);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text2);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 50;
+    backdrop-filter: blur(6px);
+    gap: 8px;
+    align-items: center;
+  }
+  #mode-statusbar.show { display: flex; }
+  #mode-statusbar .mode-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  #mode-statusbar .mode-label { font-weight: 700; }
+  #mode-statusbar.mode-blur   .mode-dot { background: #74b9ff; }
+  #mode-statusbar.mode-blur   .mode-label { color: #74b9ff; }
+  #mode-statusbar.mode-eraser .mode-dot { background: var(--accent); }
+  #mode-statusbar.mode-eraser .mode-label { color: var(--accent); }
+  #mode-statusbar.mode-select .mode-dot { background: #6bcb77; }
+  #mode-statusbar.mode-select .mode-label { color: #6bcb77; }
 
   /* ── RIGHT PANEL ── */
   #right-panel {
@@ -315,8 +350,54 @@
   .ctrl-btn.danger:hover { border-color: #ff4444; color: #ff4444; }
   .ctrl-btn.active-mode { border-color: var(--accent); color: var(--accent); background: rgba(255,107,107,0.1); }
 
-  /* ── 텍스트 패널 ── */
-  #text-panel { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+  /* ── 폰트 피커 ── */
+  .font-picker {
+    position: relative;
+    flex: 1;
+  }
+  .font-picker-btn {
+    width: 100%;
+    padding: 7px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    transition: border-color 0.15s;
+  }
+  .font-picker-btn:hover { border-color: var(--accent); }
+  .font-picker-btn svg { width: 12px; height: 12px; flex-shrink: 0; color: var(--text3); }
+  .font-picker-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 300;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .font-picker-dropdown.open { display: block; }
+  .font-option {
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background 0.12s;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-size: 15px;
+  }
+  .font-option:last-child { border-bottom: none; }
+  .font-option:hover { background: var(--surface2); }
+  .font-option.selected { color: var(--accent); background: rgba(255,107,107,0.08); }
   .font-select, .color-input-wrap {
     display: flex; gap: 6px; align-items: center;
   }
@@ -412,6 +493,58 @@
   }
   #btn-blur-mode.active { border-color: var(--accent); background: rgba(255,107,107,0.15); color: var(--accent); }
   #btn-blur-mode svg { width: 14px; height: 14px; }
+
+  /* ── 지우개 패널 ── */
+  #eraser-panel { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+  .eraser-hint { font-size: 11px; color: var(--text3); line-height: 1.6; }
+  #eraser-size-wrap { display: flex; align-items: center; gap: 8px; }
+  #eraser-preview {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  #eraser-cursor {
+    border-radius: 50%;
+    background: rgba(255,107,107,0.25);
+    border: 2px solid var(--accent);
+    transition: width 0.15s, height 0.15s;
+  }
+  #btn-eraser-mode {
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  #btn-eraser-mode svg { width: 14px; height: 14px; }
+  #btn-eraser-mode.active { border-color: var(--accent); background: rgba(255,107,107,0.15); color: var(--accent); }
+  #btn-eraser-apply {
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  #btn-eraser-apply:hover { border-color: var(--accent); color: var(--text); }
+  #eraser-status {
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    min-height: 16px;
+  }
 
   /* ── IMAGE SOURCE ── */
   #img-source { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
@@ -596,6 +729,12 @@
           <div class="ov-sub">우측 패널에서 업로드하거나 여기에 드래그해도 돼요</div>
         </div>
       </div>
+      <!-- 모드 상태 표시 바 (캔버스 아래, 이미지 비침범) -->
+      <div id="mode-statusbar">
+        <div class="mode-dot"></div>
+        <span class="mode-label" id="mode-label-text"></span>
+        <span id="mode-sub-text" style="color:var(--text3);font-size:11px;"></span>
+      </div>
     </div>
   </div>
 
@@ -638,6 +777,10 @@
       <button class="tool-tab" data-panel="blur-page" title="흐리기">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
         흐리기
+      </button>
+      <button class="tool-tab" data-panel="eraser-page" title="지우개">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H7L3 16l13-13 6 6-2 2"/><path d="M6 17l4-4"/></svg>
+        지우개
       </button>
     </div>
 
@@ -699,11 +842,17 @@
         <textarea class="text-input-area" id="text-content" placeholder="텍스트 입력..."></textarea>
         <div class="ctrl-row">
           <span class="ctrl-label">폰트</span>
-          <select class="ctrl-select" id="text-font">
-            <option value="Noto Sans KR">노토산스</option>
-            <option value="Gmarket Sans">지마켓산스</option>
-            <option value="Nanum Myeongjo">나눔명조</option>
-          </select>
+          <div class="font-picker" id="font-picker">
+            <button class="font-picker-btn" id="font-picker-btn" type="button">
+              <span id="font-picker-label" style="font-family:'Noto Sans KR',sans-serif;">노토산스</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="font-picker-dropdown" id="font-picker-dropdown">
+              <div class="font-option selected" data-font="Noto Sans KR" style="font-family:'Noto Sans KR',sans-serif;">노토산스 Aa</div>
+              <div class="font-option" data-font="Gmarket Sans" style="font-family:'Gmarket Sans',sans-serif;">지마켓산스 Aa</div>
+              <div class="font-option" data-font="Nanum Myeongjo" style="font-family:'Nanum Myeongjo',serif;">나눔명조 Aa</div>
+            </div>
+          </div>
         </div>
         <div class="ctrl-row">
           <span class="ctrl-label">크기</span>
@@ -755,6 +904,9 @@
           <input type="color" class="color-pick" id="shape-stroke" value="#ffffff">
           <input type="range" class="ctrl-slider" id="shape-stroke-w" min="0" max="20" value="2">
           <span class="ctrl-val" id="val-shape-stroke">2</span>
+          <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;margin-left:2px;flex-shrink:0;">
+            <input type="checkbox" id="shape-stroke-none"> 없음
+          </label>
         </div>
         <div class="ctrl-row">
           <span class="ctrl-label">투명도</span>
@@ -768,7 +920,12 @@
     <div class="panel-page" id="blur-page">
       <div class="panel-title">흐리기</div>
       <div id="blur-panel">
-        <p class="blur-hint">영역을 드래그해서 흐리기를 적용해요. 사각형 영역이 생성됩니다.</p>
+        <!-- 방식 선택 -->
+        <div style="display:flex;gap:6px;">
+          <button class="blur-level-btn active" id="blur-mode-rect" style="flex:1;">▭ 사각형</button>
+          <button class="blur-level-btn" id="blur-mode-pen" style="flex:1;">✏️ 펜</button>
+        </div>
+        <p class="blur-hint" id="blur-mode-hint">드래그해서 사각형 영역을 흐려요.</p>
         <div>
           <div class="panel-title" style="padding:8px 0 6px;">강도</div>
           <div class="blur-levels">
@@ -777,11 +934,46 @@
             <button class="blur-level-btn" data-blur="30">강하게</button>
           </div>
         </div>
+        <div id="blur-pen-size-row" style="display:none;" class="ctrl-row">
+          <span class="ctrl-label">브러시</span>
+          <input type="range" class="ctrl-slider" id="blur-pen-size" min="10" max="100" value="30">
+          <span class="ctrl-val" id="val-blur-pen">30</span>
+        </div>
         <button id="btn-blur-mode">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
           흐리기 모드 켜기
         </button>
-        <p class="blur-hint" style="font-size:10px;">흐리기 모드 ON 상태에서 캔버스를 드래그하면 해당 영역이 흐려져요.</p>
+        <p class="blur-hint" style="font-size:10px;">모드 ON 상태에서 캔버스에서 드래그하세요.</p>
+      </div>
+    </div>
+
+    <!-- 지우개 패널 -->
+    <div class="panel-page" id="eraser-page">
+      <div class="panel-title">지우개</div>
+      <div id="eraser-panel">
+        <p class="eraser-hint">오브젝트를 선택한 뒤 지우개 모드를 켜고 드래그해서 지워요.</p>
+
+        <div id="eraser-size-wrap">
+          <span class="ctrl-label">크기</span>
+          <input type="range" class="ctrl-slider" id="eraser-size" min="5" max="120" value="30">
+          <span class="ctrl-val" id="val-eraser-size">30</span>
+          <div id="eraser-preview">
+            <div id="eraser-cursor" style="width:20px;height:20px;"></div>
+          </div>
+        </div>
+
+        <button id="btn-eraser-mode">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H7L3 16l13-13 6 6-2 2"/><path d="M6 17l4-4"/></svg>
+          지우개 모드 켜기
+        </button>
+
+        <div id="eraser-status"></div>
+
+        <p class="eraser-hint" style="font-size:10px;">
+          • 지운 후 Ctrl+Z(되돌리기)로 복원 가능<br>
+          • 지운 영역은 투명하게 처리돼요<br>
+          • 배경 이미지는 지워지지 않아요
+        </p>
       </div>
     </div>
 
@@ -943,6 +1135,9 @@ const canvas = new fabric.Canvas('c', {
   backgroundColor: '#ffffff',
   selection: true,
   preserveObjectStacking: true,
+  stopContextMenu: true,
+  // Shift+클릭 복수 선택 명시 활성화
+  multiSelectionKey: 'shiftKey',
 });
 
 function applyDisplayScale() {
@@ -1049,7 +1244,15 @@ function loadImageToCanvas(src) {
     }
     canvasW = w; canvasH = h;
     canvas.getObjects().filter(o => o._isBackground).forEach(o => canvas.remove(o));
-    img.set({ scaleX: w / img.width, scaleY: h / img.height, left: 0, top: 0, selectable: false, evented: false, _isBackground: true });
+    img.set({
+      scaleX: w / img.width, scaleY: h / img.height,
+      left: 0, top: 0,
+      selectable: false, evented: false,
+      hasControls: false, hasBorders: false,
+      lockMovementX: true, lockMovementY: true,
+      hoverCursor: 'default',
+      _isBackground: true,
+    });
     canvas.add(img);
     canvas.sendToBack(img);
     applyDisplayScale();
@@ -1210,14 +1413,15 @@ function addSticker(src) {
 // ══════════════════════════════════════════════
 let selectedObj = null;
 
-canvas.on('selection:created', updateControls);
-canvas.on('selection:updated', updateControls);
+canvas.on('selection:created', e => { updateControls(e); updateModeStatusBar(); });
+canvas.on('selection:updated', e => { updateControls(e); updateModeStatusBar(); });
 canvas.on('selection:cleared', () => {
   selectedObj = null;
   document.getElementById('obj-controls').classList.add('hidden');
   document.getElementById('obj-empty').style.display = '';
   document.getElementById('mobile-obj-controls').style.display = 'none';
   document.getElementById('mobile-obj-empty').style.display = '';
+  updateModeStatusBar();
 });
 
 function updateControls(e) {
@@ -1287,6 +1491,38 @@ document.addEventListener('keydown', e => {
 });
 
 // ══════════════════════════════════════════════
+//  FONT PICKER
+// ══════════════════════════════════════════════
+let selectedFont = 'Noto Sans KR';
+
+const fontPickerBtn      = document.getElementById('font-picker-btn');
+const fontPickerDropdown = document.getElementById('font-picker-dropdown');
+const fontPickerLabel    = document.getElementById('font-picker-label');
+
+fontPickerBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  fontPickerDropdown.classList.toggle('open');
+});
+
+document.querySelectorAll('.font-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    selectedFont = opt.dataset.font;
+    fontPickerLabel.textContent  = opt.textContent;
+    fontPickerLabel.style.fontFamily = `'${selectedFont}', sans-serif`;
+    document.querySelectorAll('.font-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    fontPickerDropdown.classList.remove('open');
+  });
+});
+
+// 외부 클릭 시 드롭다운 닫기
+document.addEventListener('click', e => {
+  if (!document.getElementById('font-picker').contains(e.target)) {
+    fontPickerDropdown.classList.remove('open');
+  }
+});
+
+// ══════════════════════════════════════════════
 //  TEXT 삽입
 // ══════════════════════════════════════════════
 document.getElementById('text-size').addEventListener('input', function() {
@@ -1297,12 +1533,12 @@ document.getElementById('text-stroke-width').addEventListener('input', function(
 });
 
 document.getElementById('btn-add-text').addEventListener('click', () => {
-  const content = document.getElementById('text-content').value.trim() || '텍스트';
-  const font    = document.getElementById('text-font').value;
-  const size    = parseInt(document.getElementById('text-size').value);
-  const color   = document.getElementById('text-color').value;
+  const content  = document.getElementById('text-content').value.trim() || '텍스트';
+  const font     = selectedFont;  // 커스텀 피커에서 읽기
+  const size     = parseInt(document.getElementById('text-size').value);
+  const color    = document.getElementById('text-color').value;
   const strokeColor = document.getElementById('text-stroke-color').value;
-  const strokeW = parseInt(document.getElementById('text-stroke-width').value);
+  const strokeW  = parseInt(document.getElementById('text-stroke-width').value);
 
   const text = new fabric.IText(content, {
     left: canvasW / 2, top: canvasH / 2,
@@ -1331,11 +1567,12 @@ document.getElementById('shape-opacity').addEventListener('input', function() {
 });
 
 function getShapeProps() {
-  const fillNone = document.getElementById('shape-fill-none').checked;
+  const fillNone   = document.getElementById('shape-fill-none').checked;
+  const strokeNone = document.getElementById('shape-stroke-none').checked;
   return {
-    fill:        fillNone ? 'transparent' : document.getElementById('shape-fill').value,
-    stroke:      document.getElementById('shape-stroke').value,
-    strokeWidth: parseInt(document.getElementById('shape-stroke-w').value),
+    fill:        fillNone   ? 'transparent' : document.getElementById('shape-fill').value,
+    stroke:      strokeNone ? null : document.getElementById('shape-stroke').value,
+    strokeWidth: strokeNone ? 0   : parseInt(document.getElementById('shape-stroke-w').value),
     opacity:     parseInt(document.getElementById('shape-opacity').value) / 100,
   };
 }
@@ -1357,110 +1594,463 @@ document.getElementById('btn-add-line').addEventListener('click', () => {
 });
 
 // ══════════════════════════════════════════════
-//  BLUR — 흐리기 (드래그로 영역 선택)
+//  BLUR — 흐리기 (사각형 / 펜 두 가지 방식)
 // ══════════════════════════════════════════════
-let blurMode = false;
-let blurLevel = 15;
-let blurStartX = 0, blurStartY = 0, blurRect = null;
+let blurMode    = false;
+let blurLevel   = 15;
+let blurIsPen   = false;          // false=사각형, true=펜
+let blurStartX  = 0, blurStartY = 0, blurRect = null;
 
-document.querySelectorAll('.blur-level-btn').forEach(btn => {
+// 강도 버튼
+document.querySelectorAll('[data-blur]').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.blur-level-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('[data-blur]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     blurLevel = parseInt(btn.dataset.blur);
   });
 });
 
+// 사각형 / 펜 전환
+document.getElementById('blur-mode-rect').addEventListener('click', () => {
+  blurIsPen = false;
+  document.getElementById('blur-mode-rect').classList.add('active');
+  document.getElementById('blur-mode-pen').classList.remove('active');
+  document.getElementById('blur-mode-hint').textContent = '드래그해서 사각형 영역을 흐려요.';
+  document.getElementById('blur-pen-size-row').style.display = 'none';
+});
+document.getElementById('blur-mode-pen').addEventListener('click', () => {
+  blurIsPen = true;
+  document.getElementById('blur-mode-pen').classList.add('active');
+  document.getElementById('blur-mode-rect').classList.remove('active');
+  document.getElementById('blur-mode-hint').textContent = '캔버스 위에서 자유롭게 드래그해요.';
+  document.getElementById('blur-pen-size-row').style.display = 'flex';
+});
+document.getElementById('blur-pen-size').addEventListener('input', function() {
+  document.getElementById('val-blur-pen').textContent = this.value;
+});
+
+// 모드 ON/OFF 버튼
 const btnBlurMode = document.getElementById('btn-blur-mode');
 btnBlurMode.addEventListener('click', () => {
   blurMode = !blurMode;
   btnBlurMode.classList.toggle('active', blurMode);
+  const svgIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
   btnBlurMode.innerHTML = blurMode
-    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> 흐리기 모드 끄기`
-    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> 흐리기 모드 켜기`;
+    ? `${svgIcon} 흐리기 모드 끄기`
+    : `${svgIcon} 흐리기 모드 켜기`;
   document.getElementById('canvas-container').classList.toggle('blur-mode', blurMode);
-  // 흐리기 모드일 때 캔버스 선택 비활성화
-  canvas.selection = !blurMode;
-  canvas.forEachObject(o => { o.selectable = !blurMode; });
+
+  if (blurMode) {
+    // 지우개 모드가 켜져 있으면 먼저 끄기 (동시 활성 방지)
+    if (eraserMode) deactivateEraser();
+    canvas.selection = false;
+    canvas.discardActiveObject();
+    canvas.forEachObject(o => { o.selectable = false; o.evented = false; });
+  } else {
+    canvas.selection = true;
+    canvas.forEachObject(o => {
+      if (o._isBackground) { o.selectable = false; o.evented = false; }
+      else { o.selectable = true; o.evented = true; }
+    });
+  }
+  canvas.renderAll();
+  updateModeStatusBar();
 });
 
-// 흐리기 드래그 이벤트
+// ── 사각형 모드 이벤트 ──
 canvas.on('mouse:down', opt => {
-  if (!blurMode) return;
+  if (!blurMode || blurIsPen) return;
+  // 배경 오브젝트가 target이면 무시
+  if (opt.target && opt.target._isBackground) return;
   const p = canvas.getPointer(opt.e);
   blurStartX = p.x; blurStartY = p.y;
   blurRect = new fabric.Rect({
-    left: blurStartX, top: blurStartY,
-    width: 1, height: 1,
-    fill: 'rgba(100,100,255,0.15)',
-    stroke: 'rgba(100,100,255,0.6)',
-    strokeWidth: 1 / displayScale,
-    selectable: false, evented: false,
-    _isBlurPreview: true,
+    left: blurStartX, top: blurStartY, width: 1, height: 1,
+    fill: 'rgba(100,100,255,0.15)', stroke: 'rgba(100,100,255,0.6)',
+    strokeWidth: 1 / displayScale, selectable: false, evented: false, _isBlurPreview: true,
   });
   canvas.add(blurRect);
 });
-
 canvas.on('mouse:move', opt => {
-  if (!blurMode || !blurRect) return;
+  if (!blurMode || blurIsPen || !blurRect) return;
   const p = canvas.getPointer(opt.e);
   const w = p.x - blurStartX, h = p.y - blurStartY;
   blurRect.set({
     left:   w < 0 ? p.x : blurStartX,
     top:    h < 0 ? p.y : blurStartY,
-    width:  Math.abs(w),
-    height: Math.abs(h),
+    width:  Math.abs(w), height: Math.abs(h),
   });
   canvas.renderAll();
 });
-
 canvas.on('mouse:up', opt => {
-  if (!blurMode || !blurRect) return;
+  if (!blurMode || blurIsPen || !blurRect) return;
   const r = blurRect;
   canvas.remove(r);
-
   const bx = r.left, by = r.top, bw = r.width, bh = r.height;
   if (bw < 4 || bh < 4) { blurRect = null; return; }
-
-  // 해당 영역을 캡처해서 blur 필터 적용한 이미지로 대체
   applyBlurToRegion(bx, by, bw, bh, blurLevel);
   blurRect = null;
 });
 
+// ── 펜 모드 이벤트 ──
+let penPoints = [];
+let penPolyline = null;
+let isPenDrawing = false;
+let penBrushSize = 30;
+
+canvas.on('mouse:down', opt => {
+  if (!blurMode || !blurIsPen) return;
+  if (opt.target && opt.target._isBackground) return;
+  isPenDrawing = true;
+  penPoints = [];
+  const p = canvas.getPointer(opt.e);
+  penPoints.push({ x: p.x, y: p.y });
+  penPolyline = new fabric.Polyline([{ x: p.x, y: p.y }], {
+    stroke: 'rgba(100,100,255,0.5)',
+    strokeWidth: parseInt(document.getElementById('blur-pen-size').value) / displayScale,
+    fill: 'transparent',
+    selectable: false, evented: false,
+    strokeLineCap: 'round', strokeLineJoin: 'round',
+    _isBlurPreview: true,
+  });
+  canvas.add(penPolyline);
+});
+canvas.on('mouse:move', opt => {
+  if (!blurMode || !blurIsPen || !isPenDrawing) return;
+  const p = canvas.getPointer(opt.e);
+  penPoints.push({ x: p.x, y: p.y });
+  penPolyline.set({ points: [...penPoints] });
+  canvas.renderAll();
+});
+canvas.on('mouse:up', () => {
+  if (!blurMode || !blurIsPen || !isPenDrawing) return;
+  isPenDrawing = false;
+  if (penPolyline) { canvas.remove(penPolyline); penPolyline = null; }
+  if (penPoints.length < 2) { penPoints = []; return; }
+  applyBlurToPath(penPoints, blurLevel);
+  penPoints = [];
+});
+
+// 사각형 blur 적용
 function applyBlurToRegion(x, y, w, h, blur) {
-  // 캔버스를 원본 해상도로 렌더링 후 해당 영역만 잘라 blur 적용
   canvas.discardActiveObject();
   canvas.renderAll();
-
   const tempCanvas = document.createElement('canvas');
-  tempCanvas.width  = Math.round(w);
-  tempCanvas.height = Math.round(h);
+  tempCanvas.width = Math.round(w); tempCanvas.height = Math.round(h);
   const ctx = tempCanvas.getContext('2d');
-
-  // displayScale 고려해서 실제 픽셀 영역 계산
   const srcCanvas = canvas.getElement();
   ctx.filter = `blur(${blur}px)`;
   ctx.drawImage(srcCanvas,
     Math.round(x * displayScale), Math.round(y * displayScale),
     Math.round(w * displayScale), Math.round(h * displayScale),
-    0, 0, Math.round(w), Math.round(h)
-  );
-
+    0, 0, Math.round(w), Math.round(h));
   const dataURL = tempCanvas.toDataURL();
   fabric.Image.fromURL(dataURL, img => {
-    img.set({
-      left: x, top: y,
-      scaleX: w / img.width,
-      scaleY: h / img.height,
-      selectable: true, evented: true,
-      _isBlur: true,
-    });
+    img.set({ left: x, top: y, scaleX: w / img.width, scaleY: h / img.height,
+      selectable: true, evented: true, _isBlur: true });
     canvas.add(img);
-    // 흐리기 오브젝트가 선택되면 모드 복원
     canvas.setActiveObject(img);
     canvas.renderAll();
     showToast('흐리기 적용 ✓');
   });
+}
+
+// 펜 blur 적용 — 경로의 bounding box를 기준으로 마스킹 적용
+function applyBlurToPath(points, blur) {
+  if (points.length < 2) return;
+  const brushR = parseInt(document.getElementById('blur-pen-size').value) / 2;
+  const xs = points.map(p => p.x), ys = points.map(p => p.y);
+  const x = Math.max(0, Math.min(...xs) - brushR);
+  const y = Math.max(0, Math.min(...ys) - brushR);
+  const w = Math.min(canvasW - x, Math.max(...xs) - Math.min(...xs) + brushR * 2);
+  const h = Math.min(canvasH - y, Math.max(...ys) - Math.min(...ys) + brushR * 2);
+  if (w < 4 || h < 4) return;
+
+  canvas.discardActiveObject();
+  canvas.renderAll();
+  const srcCanvas = canvas.getElement();
+
+  // 1. 흐린 이미지 캔버스
+  const blurC = document.createElement('canvas');
+  blurC.width = Math.round(w); blurC.height = Math.round(h);
+  const blurCtx = blurC.getContext('2d');
+  blurCtx.filter = `blur(${blur}px)`;
+  blurCtx.drawImage(srcCanvas,
+    Math.round(x * displayScale), Math.round(y * displayScale),
+    Math.round(w * displayScale), Math.round(h * displayScale),
+    0, 0, Math.round(w), Math.round(h));
+
+  // 2. 마스크 캔버스 — 경로를 두꺼운 선으로 그리기
+  const maskC = document.createElement('canvas');
+  maskC.width = Math.round(w); maskC.height = Math.round(h);
+  const maskCtx = maskC.getContext('2d');
+  maskCtx.strokeStyle = '#000';
+  maskCtx.lineWidth = brushR * 2;
+  maskCtx.lineCap = 'round';
+  maskCtx.lineJoin = 'round';
+  maskCtx.beginPath();
+  points.forEach((p, i) => {
+    const lx = p.x - x, ly = p.y - y;
+    i === 0 ? maskCtx.moveTo(lx, ly) : maskCtx.lineTo(lx, ly);
+  });
+  maskCtx.stroke();
+
+  // 3. 합성: 흐린 이미지 위에 마스크 경로 모양만 출력
+  const outC = document.createElement('canvas');
+  outC.width = Math.round(w); outC.height = Math.round(h);
+  const outCtx = outC.getContext('2d');
+  outCtx.drawImage(blurC, 0, 0);
+  outCtx.globalCompositeOperation = 'destination-in';
+  outCtx.drawImage(maskC, 0, 0);
+
+  const dataURL = outC.toDataURL();
+  fabric.Image.fromURL(dataURL, img => {
+    img.set({ left: x, top: y, scaleX: w / img.width, scaleY: h / img.height,
+      selectable: true, evented: true, _isBlur: true });
+    canvas.add(img);
+    canvas.setActiveObject(img);
+    canvas.renderAll();
+    showToast('흐리기 적용 ✓');
+  });
+}
+
+// ══════════════════════════════════════════════
+//  ERASER — 지우개 (방법A: EraserBrush, 폴백: destination-out)
+// ══════════════════════════════════════════════
+let eraserMode = false;
+let eraserSize = 30;
+let eraserTarget = null;      // 현재 지우개 적용 대상 fabric 오브젝트
+let offCanvas = null;          // 오프스크린 캔버스 (destination-out용)
+let offCtx = null;
+let isEraserDrawing = false;
+
+// 지우개 크기 슬라이더
+const eraserSizeEl = document.getElementById('eraser-size');
+const valEraserEl  = document.getElementById('val-eraser-size');
+const eraserCursor = document.getElementById('eraser-cursor');
+
+function updateEraserPreview(size) {
+  const px = Math.max(8, Math.min(40, size * 0.9));
+  eraserCursor.style.width  = px + 'px';
+  eraserCursor.style.height = px + 'px';
+}
+eraserSizeEl.addEventListener('input', () => {
+  eraserSize = parseInt(eraserSizeEl.value);
+  valEraserEl.textContent = eraserSize;
+  updateEraserPreview(eraserSize);
+  // EraserBrush 사용 중이면 크기 갱신
+  if (eraserMode && canvas.freeDrawingBrush) {
+    canvas.freeDrawingBrush.width = eraserSize;
+  }
+});
+updateEraserPreview(eraserSize);
+
+// 지우개 모드 토글 버튼
+const btnEraserMode = document.getElementById('btn-eraser-mode');
+btnEraserMode.addEventListener('click', () => {
+  eraserMode ? deactivateEraser() : activateEraser();
+});
+
+function setEraserStatus(msg) {
+  document.getElementById('eraser-status').textContent = msg;
+}
+
+function activateEraser() {
+  // 흐리기 모드가 켜져 있으면 먼저 끄기 (동시 활성 방지)
+  if (blurMode) {
+    blurMode = false;
+    document.getElementById('btn-blur-mode').classList.remove('active');
+    const si = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
+    document.getElementById('btn-blur-mode').innerHTML = `${si} 흐리기 모드 켜기`;
+    document.getElementById('canvas-container').classList.remove('blur-mode');
+  }
+  eraserMode = true;
+  btnEraserMode.classList.add('active');
+  btnEraserMode.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 20H7L3 16l13-13 6 6-2 2"/><path d="M6 17l4-4"/></svg> 지우개 모드 끄기`;
+  document.getElementById('canvas-container').classList.add('eraser-mode');
+
+  if (typeof fabric.EraserBrush !== 'undefined') {
+    useEraserBrush();
+  } else {
+    useDestinationOut();
+  }
+  updateModeStatusBar();
+}
+
+function deactivateEraser() {
+  eraserMode = false;
+  btnEraserMode.classList.remove('active');
+  btnEraserMode.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 20H7L3 16l13-13 6 6-2 2"/><path d="M6 17l4-4"/></svg> 지우개 모드 켜기`;
+  setEraserStatus('');
+  document.getElementById('canvas-container').classList.remove('eraser-mode');
+
+  if (canvas.isDrawingMode) {
+    canvas.isDrawingMode = false;
+    canvas.freeDrawingBrush = null;
+  }
+  canvas.off('mouse:down', eraserMouseDown);
+  canvas.off('mouse:move', eraserMouseMove);
+  canvas.off('mouse:up',   eraserMouseUp);
+
+  document.getElementById('canvas-container').classList.remove('blur-mode');
+  canvas.selection = true;
+  canvas.defaultCursor = 'default';
+  canvas.forEachObject(o => {
+    if (o._isBackground) { o.selectable = false; o.evented = false; }
+    else { o.selectable = true; o.evented = true; }
+  });
+  canvas.renderAll();
+  updateModeStatusBar();
+}
+
+// ── 방법 A: EraserBrush ──────────────────────
+function useEraserBrush() {
+  // 모든 오브젝트를 erasable로 설정 (배경 제외)
+  canvas.forEachObject(o => {
+    o.erasable = !o._isBackground;
+    o.selectable = false;
+  });
+  canvas.selection = false;
+
+  const brush = new fabric.EraserBrush(canvas);
+  brush.width = eraserSize;
+  canvas.freeDrawingBrush = brush;
+  canvas.isDrawingMode = true;
+  setEraserStatus('EraserBrush 모드 활성 ✓');
+}
+
+// ── 방법 B: destination-out (폴백) ────────────
+function useDestinationOut() {
+  canvas.isDrawingMode = false;
+  canvas.selection = false;
+  canvas.forEachObject(o => { o.selectable = false; });
+  document.getElementById('canvas-container').classList.add('blur-mode');
+  setEraserStatus('지우개 모드 활성 ✓ (오브젝트 위에서 드래그)');
+
+  canvas.on('mouse:down', eraserMouseDown);
+  canvas.on('mouse:move', eraserMouseMove);
+  canvas.on('mouse:up',   eraserMouseUp);
+}
+
+// destination-out 이벤트 핸들러
+let lastErasePoint = null;
+
+function eraserMouseDown(opt) {
+  if (!eraserMode) return;
+  const p = canvas.getPointer(opt.e);
+
+  // 배경 또는 블러프리뷰는 완전 무시
+  if (opt.target && (opt.target._isBackground || opt.target._isBlurPreview)) return;
+
+  // 클릭 지점 아래 오브젝트 중 배경이 아닌 것만
+  const objs = canvas.getObjects().filter(o =>
+    !o._isBackground && !o._isBlurPreview && o.visible !== false
+  );
+  eraserTarget = null;
+  for (let i = objs.length - 1; i >= 0; i--) {
+    const o = objs[i];
+    // getBoundingRect 기반 히트 테스트 (더 안정적)
+    const br = o.getBoundingRect(true);
+    if (p.x >= br.left && p.x <= br.left + br.width &&
+        p.y >= br.top  && p.y <= br.top  + br.height) {
+      eraserTarget = o;
+      break;
+    }
+  }
+  if (!eraserTarget) return;
+
+  isEraserDrawing = true;
+  lastErasePoint = null;
+
+  const bounds = eraserTarget.getBoundingRect(true);
+  offCanvas = document.createElement('canvas');
+  offCanvas.width  = Math.max(1, Math.ceil(bounds.width));
+  offCanvas.height = Math.max(1, Math.ceil(bounds.height));
+  offCtx = offCanvas.getContext('2d');
+
+  // 오브젝트를 오프스크린에 그리기 (원래 위치 기준으로 offset)
+  const origLeft = eraserTarget.left;
+  const origTop  = eraserTarget.top;
+  eraserTarget.set({ left: origLeft - bounds.left, top: origTop - bounds.top });
+  eraserTarget.render(offCtx);
+  eraserTarget.set({ left: origLeft, top: origTop });
+
+  eraserTarget._eraserBounds = bounds;
+  lastErasePoint = { x: p.x - bounds.left, y: p.y - bounds.top };
+  eraseAtLocal(lastErasePoint.x, lastErasePoint.y);
+}
+
+function eraserMouseMove(opt) {
+  if (!eraserMode || !isEraserDrawing || !eraserTarget) return;
+  const p = canvas.getPointer(opt.e);
+  const bounds = eraserTarget._eraserBounds;
+  const cx = p.x - bounds.left;
+  const cy = p.y - bounds.top;
+
+  // 끊김 보간: 이전 점과 현재 점 사이를 선형 보간으로 채움
+  if (lastErasePoint) {
+    const dx = cx - lastErasePoint.x;
+    const dy = cy - lastErasePoint.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const step = Math.max(1, eraserSize * 0.3); // 반지름의 30% 간격으로 채움
+    if (dist > step) {
+      const steps = Math.ceil(dist / step);
+      for (let i = 1; i <= steps; i++) {
+        eraseAtLocal(
+          lastErasePoint.x + dx * (i / steps),
+          lastErasePoint.y + dy * (i / steps)
+        );
+      }
+    } else {
+      eraseAtLocal(cx, cy);
+    }
+  } else {
+    eraseAtLocal(cx, cy);
+  }
+  lastErasePoint = { x: cx, y: cy };
+}
+
+function eraserMouseUp() {
+  if (!eraserMode || !isEraserDrawing || !eraserTarget) return;
+  isEraserDrawing = false;
+  lastErasePoint = null;
+
+  const bounds = eraserTarget._eraserBounds;
+  const dataURL = offCanvas.toDataURL('image/png');
+  const oldObj = eraserTarget;
+  eraserTarget = null;
+  offCanvas = null; offCtx = null;
+
+  fabric.Image.fromURL(dataURL, newImg => {
+    newImg.set({
+      left:   bounds.left,
+      top:    bounds.top,
+      scaleX: bounds.width  / newImg.width,
+      scaleY: bounds.height / newImg.height,
+      selectable: !eraserMode,  // 지우개 모드 중이면 선택 불가 유지
+      evented:    !eraserMode,
+      _isErased: true,
+    });
+    canvas.remove(oldObj);
+    canvas.add(newImg);
+    canvas.renderAll();
+    showToast('지우기 완료 ✓');
+  });
+}
+
+function eraseAtLocal(lx, ly) {
+  if (!offCtx) return;
+  const r = eraserSize / 2;
+  offCtx.save();
+  offCtx.globalCompositeOperation = 'destination-out';
+  offCtx.beginPath();
+  offCtx.arc(lx, ly, r, 0, Math.PI * 2);
+  offCtx.fill();
+  offCtx.restore();
+
+  // 실시간 미리보기: setSrc 대신 직접 캔버스 픽셀 업데이트
+  const dataURL = offCanvas.toDataURL('image/png');
+  eraserTarget.setSrc(dataURL, () => { canvas.renderAll(); });
 }
 
 // ══════════════════════════════════════════════
@@ -1477,14 +2067,63 @@ document.getElementById('btn-download').addEventListener('click', download);
 document.getElementById('mb-download').addEventListener('click', download);
 
 // ══════════════════════════════════════════════
-//  DESKTOP TOOL TABS
+//  MODE STATUS BAR
 // ══════════════════════════════════════════════
+function updateModeStatusBar() {
+  const bar = document.getElementById('mode-statusbar');
+  const label = document.getElementById('mode-label-text');
+  const sub = document.getElementById('mode-sub-text');
+
+  if (blurMode) {
+    bar.className = 'show mode-blur';
+    label.textContent = blurIsPen ? '✏️ 흐리기 (펜)' : '⬜ 흐리기 (사각형)';
+    sub.textContent = '캔버스를 드래그해 흐려요';
+  } else if (eraserMode) {
+    bar.className = 'show mode-eraser';
+    label.textContent = '지우개';
+    sub.textContent = `크기 ${eraserSize}px · 오브젝트 위 드래그`;
+  } else if (selectedObj && !selectedObj._isBackground) {
+    bar.className = 'show mode-select';
+    label.textContent = '선택됨';
+    const nameMap = { 'image': '이미지', 'i-text': '텍스트', 'rect': '사각형', 'circle': '원', 'line': '선' };
+    sub.textContent = nameMap[selectedObj.type] || selectedObj.type;
+  } else {
+    bar.className = '';
+  }
+}
+
+// ── 모든 특수 모드 해제 공통 함수 ──────────────
+function deactivateAllModes() {
+  if (blurMode) {
+    blurMode = false;
+    const btnBM = document.getElementById('btn-blur-mode');
+    btnBM.classList.remove('active');
+    const si = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
+    btnBM.innerHTML = `${si} 흐리기 모드 켜기`;
+    document.getElementById('canvas-container').classList.remove('blur-mode');
+  }
+  if (eraserMode) deactivateEraser();
+
+  canvas.selection = true;
+  canvas.forEachObject(o => {
+    if (o._isBackground) { o.selectable = false; o.evented = false; }
+    else { o.selectable = true; o.evented = true; }
+  });
+  canvas.renderAll();
+  updateModeStatusBar();
+}
+
+// ── DESKTOP TOOL TABS ────────────────────────
 document.querySelectorAll('.tool-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.panel-page').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById(tab.dataset.panel).classList.add('active');
+    // 흐리기·지우개 탭이 아닌 곳으로 이동하면 모드 해제
+    if (tab.dataset.panel !== 'blur-page' && tab.dataset.panel !== 'eraser-page') {
+      deactivateAllModes();
+    }
   });
 });
 
