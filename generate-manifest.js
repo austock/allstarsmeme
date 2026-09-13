@@ -31,13 +31,14 @@ const CATEGORY_LABELS = {
   OR: 'OR',
   LO: 'LO',
   WM: 'WM',
+  CO: 'CO',
 };
 
 // 지원 이미지 확장자
 const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
 
 // 카테고리 표시 순서 (CATEGORY_LABELS 키 순서대로, 없으면 알파벳순)
-const CATEGORY_ORDER = ['IA', 'HA', 'CL', 'PC', 'OR', 'LO', 'WM'];
+const CATEGORY_ORDER = ['IA', 'HA', 'CL', 'PC', 'OR', 'LO', 'WM', 'CO'];
 // ──────────────────────────────────────────────
 
 if (!fs.existsSync(IMG_DIR)) {
