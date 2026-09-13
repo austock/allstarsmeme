@@ -235,6 +235,29 @@
         "img/WM/케이커스.png",
         "img/WM/포에.png"
       ]
+    },
+    {
+      "id": "co",
+      "label": "CO",
+      "stickers": [
+        "img/CO/PP.png",
+        "img/CO/마타도어.png",
+        "img/CO/맥켄지.png",
+        "img/CO/브라이어.png",
+        "img/CO/세실리아.png",
+        "img/CO/시스터.png",
+        "img/CO/시오나.png",
+        "img/CO/실버.png",
+        "img/CO/야체크.png",
+        "img/CO/에두아르.png",
+        "img/CO/웬디고.png",
+        "img/CO/쥬브나일.png",
+        "img/CO/추안.png",
+        "img/CO/클로토.png",
+        "img/CO/클린트.png",
+        "img/CO/테이텀.png",
+        "img/CO/프란체스카.png"
+      ]
     }
   ]
 }
